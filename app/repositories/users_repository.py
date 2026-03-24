@@ -26,6 +26,20 @@ class UserRepository(BaseRepository):
 
     # READ #####################################################################
 
+    async def login(self, user: UserLogin) -> Optional[UserDBResponse]:
+        stmt = (
+            select(User)
+            .filter_by(
+                username=user.username,
+                password_hash=user.password_hash,
+                is_active=True,
+            ).limit(1)
+        )
+        user_db = (await self.db.execute(stmt)).scalar_one_or_none()
+        if (user_db is None):
+            return None
+        return UserDBResponse.model_validate(user_db)
+
     async def read_all(self) -> List[UserDBResponse]:
         stmt = select(User)
         user_db_list = (await self.db.execute(stmt)).scalars().all()
@@ -87,19 +101,6 @@ class UserRepository(BaseRepository):
         await self.db.commit()
 
     ############################################################################
-
-    async def login(self, user: UserLogin) -> Optional[UserDBResponse]:
-        stmt = (
-            select(User)
-            .filter_by(
-                username=user.username,
-                password_hash=user.password_hash
-            ).limit(1)
-        )
-        user_db = (await self.db.execute(stmt)).scalar_one_or_none()
-        if (user_db is None):
-            return None
-        return UserDBResponse.model_validate(user_db)
 
     @staticmethod
     def _map_users_to_schema_list(users: Sequence[User]) -> List[UserDBResponse]:
