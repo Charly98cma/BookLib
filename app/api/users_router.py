@@ -7,6 +7,7 @@ from db.database import get_db
 from schemas.users_schema import UserCreate, UserLogin, UserDBResponse
 from services.users_service import UserService
 
+# User router
 router = APIRouter(
     prefix="/users",
     tags=["users"]
