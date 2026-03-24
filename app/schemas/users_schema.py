@@ -1,30 +1,38 @@
-import re
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from typing import Annotated, Optional
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 class UserLogin(BaseModel):
-    """Pydantic model with User values for login"""
+    """
+    Pydantic model for User login.
+    """
 
-    username: str
-    password_hash: str
+    username: Annotated[str, Field(examples=["username"])]
+    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
 
-class UserCreate(UserLogin):
-    """Pytdantic model for User creation"""
+class UserCreate(BaseModel):
+    """
+    Pytdantic model for User creation
+    """
 
-    email: EmailStr
-    is_active: bool
-    is_admin: bool
+    username: Annotated[str, Field(examples=["username"])]
+    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+    email: Annotated[EmailStr, Field(examples=["user@example.com"])]
+    is_active: Annotated[bool, Field(examples=[True])]
+    is_admin: Annotated[bool, Field(examples=[False])]
 
 class UserDBResponse(BaseModel):
-    """Pytdantic model for User response"""
+    """
+    Pytdantic model for User response
+    """
 
-    email: EmailStr
-    username: str
-    password_hash: str
-    is_active: bool
-    is_admin: bool
-    created_at: datetime
-    updated_at: datetime
-    last_login: datetime | None
+    username: Annotated[str, Field(examples=["username"])]
+    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+    email: Annotated[EmailStr, Field(examples=["user@example.com"])]
+    is_active: Annotated[bool, Field(examples=[True])]
+    is_admin: Annotated[bool, Field(examples=[False])]
+    created_at: Annotated[datetime, Field(examples=["2026-03-24T16:14:21.554Z"])]
+    updated_at: Annotated[datetime, Field(examples=["2026-03-24T16:14:21.554Z"])]
+    last_login: Annotated[Optional[datetime], Field(examples=["2026-03-24T16:14:21.554Z"])]
 
     model_config = ConfigDict(from_attributes=True)
