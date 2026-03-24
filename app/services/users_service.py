@@ -18,16 +18,8 @@ class UserService:
     # CREATE ###################################################################
 
     async def create(self, user: UserCreate) -> Optional[UserDBResponse]:
-        if (await self.repository.check_username_exists(user.username)):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=HTTPMessages.USERNAME_ALREADY_EXISTS
-            )
-        if (await self.repository.check_email_exists(user.email)):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=HTTPMessages.EMAIL_ALREADY_EXISTS
-            )
+        await self.verify_username_is_free(user.username)
+        await self.verify_email_is_free(user.email)
         return await self.repository.create(user)
 
     # READ #####################################################################
@@ -47,19 +39,34 @@ class UserService:
         return await self.repository.update_last_login(user.username)
 
     async def update(self, username: str, user: UserCreate):
-        await self.check_username_is_free(username)
+        await self.verify_username_exists(username)
+        await self.verify_username_is_free(user.username)
         user_db = (await self.repository.update(username, user))
         return user_db
 
     # DELETE ###################################################################
 
     async def delete(self, username: str):
-        await self.check_username_is_free(username)
+        await self.verify_username_exists(username)
         await self.repository.delete(username)
 
     ############################################################################
 
-    async def check_username_is_free(self, username: str):
+    async def verify_username_is_free(self, username: str):
+        if (await self.repository.check_username_exists(username)):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=HTTPMessages.USERNAME_ALREADY_EXISTS
+            )
+        
+    async def verify_email_is_free(self, email: str):
+        if (await self.repository.check_email_exists(email)):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=HTTPMessages.EMAIL_ALREADY_EXISTS
+            )
+
+    async def verify_username_exists(self, username: str):
         """
         A function that raises a HTTPException with 404 (NOT FOUND) if the
         database does not contain a User with the given username.
