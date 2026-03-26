@@ -4,12 +4,17 @@ from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import tools.password_manager as passwd_mngr
 from enums.http_messages import HTTPMessages
 from schemas.users_schema import UserCreate, UserLogin, UserDBResponse
 from repositories.users_repository import UserRepository
 
+DUMMY_PASSWORD_HASH = passwd_mngr.hash_password("dummypassword")
+
 class UserService:
-    """Service class for handling users"""
+    """Class to handle all services provided for the User endpoints
+
+    """
 
     def __init__(self, session: AsyncSession):
         self.repository = UserRepository(session)
@@ -17,65 +22,89 @@ class UserService:
 
     # CREATE ###################################################################
 
-    async def create(self, user: UserCreate) -> Optional[UserDBResponse]:
-        await self.verify_username_is_free(user.username)
-        await self.verify_email_is_free(user.email)
-        return await self.repository.create(user)
+    async def create_user(self, user: UserCreate) -> Optional[UserDBResponse]:
+        """
+        """
+        # Check if the username or email is already in the database
+        username_ok = await self.repository.is_username_used(user.username)
+        email_ok = await self.repository.is_email_used(user.email)
+        # Throw exception if user or email are already used
+        if (not username_ok or not email_ok):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
+            )
+        # Raise exception if password longer that 72 Bytes (bcrypt limitations)
+        if (len(user.password) > 72):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=HTTPMessages.INVALID_PASSWORD_LENGTH
+            )
+        # If all OK, then hash user password and create the new user
+        password_hash = passwd_mngr.hash_password(user.password)
+        return await self.repository.create_user(user, password_hash)
 
     # READ #####################################################################
 
-    async def read_all(self) -> List[UserDBResponse]:
-        return await self.repository.read_all()
+    async def read_all_users(self) -> List[UserDBResponse]:
+        return await self.repository.read_all_users()
     
     # UPDATE ###################################################################
 
     async def login(self, user: UserLogin):
-        user_db = await self.repository.login(user)
+        user_db = await self.repository.read_password(user.username)
+        # Check againts dummy password to avoid timming attacks
         if (user_db is None):
-            raise HTTPException(
-                status_code=HTTPStatus.UNAUTHORIZED,
-                detail=HTTPMessages.WRONG_CREDENTIALS
-            )
+            self._verify_password(user.password, DUMMY_PASSWORD_HASH)
+        else:
+            self._verify_password(user.password, user_db.password)
+        # If user exists and passwords match, update login and return user
         return await self.repository.update_last_login(user.username)
 
-    async def update(self, username: str, user: UserCreate):
-        await self.verify_username_exists(username)
-        await self.verify_username_is_free(user.username)
-        user_db = (await self.repository.update(username, user))
-        return user_db
-
-    # DELETE ###################################################################
-
-    async def delete(self, username: str):
-        await self.verify_username_exists(username)
-        await self.repository.delete(username)
-
-    ############################################################################
-
-    async def verify_username_is_free(self, username: str):
-        if (await self.repository.check_username_exists(username)):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=HTTPMessages.USERNAME_ALREADY_EXISTS
-            )
-        
-    async def verify_email_is_free(self, email: str):
-        if (await self.repository.check_email_exists(email)):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=HTTPMessages.EMAIL_ALREADY_EXISTS
-            )
-
-    async def verify_username_exists(self, username: str):
-        """
-        A function that raises a HTTPException with 404 (NOT FOUND) if the
-        database does not contain a User with the given username.
-
-        Otherwise, the function does not return any value.
-        """
-        if (not (await self.repository.check_username_exists(username))):
+    async def update_user(self, username: str, user: UserCreate):
+        new_username_ok = await self.repository.is_username_used(user.username)
+        new_email_ok = await self.repository.is_email_used(user.email)
+        user_db = await self.repository.read_user(username)
+        # Check if the given username is in the database
+        if (user_db is None):
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
             )
+        # Check the new username or email are not already used
+        # (in case they are diferent from the already set ones)
+        if (((user_db.username != user.username) and (not new_username_ok)) or 
+            ((user_db.email != user.email) and (not new_email_ok))):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
+            )
+        # Update the user and return the new values of the database
+        return await self.repository.update_user(username, user)
 
+    # DELETE ###################################################################
+
+    async def delete_user(self, username: str) -> None:
+        # Check if the username exists and throw exception if does not
+        username_ok = await self.repository.is_username_used(username)
+        if (not username_ok):
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
+            )
+        # Delete user from database
+        await self.repository.delete_user(username)
+
+    ############################################################################
+
+    @staticmethod
+    def _verify_password(plain_password: str, hashed_password: str):
+        """Function to check a plain password againts a hashed passwords
+        
+        
+        """
+        if (not passwd_mngr.verify_password(plain_password, hashed_password)):
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail=HTTPMessages.WRONG_CREDENTIALS
+            )

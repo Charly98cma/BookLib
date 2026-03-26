@@ -8,7 +8,7 @@ class UserLogin(BaseModel):
     """
 
     username: Annotated[str, Field(examples=["username"])]
-    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+    password: Annotated[str, Field(examples=["password_clear"])]
 
 class UserCreate(BaseModel):
     """
@@ -16,10 +16,18 @@ class UserCreate(BaseModel):
     """
 
     username: Annotated[str, Field(examples=["username"])]
-    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+    password: Annotated[str, Field(examples=["password_clear"])]
     email: Annotated[EmailStr, Field(examples=["user@example.com"])]
     is_active: Annotated[bool, Field(examples=[True])]
     is_admin: Annotated[bool, Field(examples=[False])]
+
+class UserDBSecrets(BaseModel):
+    """
+    Pydantic model for User secrets
+    """
+    password: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+
+    model_config = ConfigDict(from_attributes=True)
 
 class UserDBResponse(BaseModel):
     """
@@ -27,7 +35,6 @@ class UserDBResponse(BaseModel):
     """
 
     username: Annotated[str, Field(examples=["username"])]
-    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
     email: Annotated[EmailStr, Field(examples=["user@example.com"])]
     is_active: Annotated[bool, Field(examples=[True])]
     is_admin: Annotated[bool, Field(examples=[False])]
