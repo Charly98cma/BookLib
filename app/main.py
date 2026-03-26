@@ -1,9 +1,10 @@
+import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from api.router import router
-from contextlib import asynccontextmanager
 from db.init_db import init_tables
 
 logging.basicConfig(level=logging.ERROR)
@@ -15,7 +16,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="BookLib",
-    debug=True,
+    debug=(os.getenv("DEBUG")=="True"),
     lifespan=lifespan
 )
 

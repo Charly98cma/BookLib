@@ -18,8 +18,11 @@ DATABASE_URL = (
     )
 )
 
-engine = create_async_engine(DATABASE_URL, echo=False)
-factory = async_sessionmaker(engine, expire_on_commit=False)
+engine = create_async_engine(DATABASE_URL,
+                             echo=(os.getenv("DEBUG")=="True"))
+
+factory = async_sessionmaker(engine,
+                             expire_on_commit=False)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     # Create a new session from the factory
