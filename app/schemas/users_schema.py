@@ -25,7 +25,7 @@ class UserDBSecrets(BaseModel):
     """
     Pydantic model for User secrets
     """
-    password: Annotated[str, Field(examples=["very_secure_hashed_password"])]
+    password_hash: Annotated[str, Field(examples=["very_secure_hashed_password"])]
 
     model_config = ConfigDict(from_attributes=True)
 

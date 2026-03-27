@@ -50,7 +50,7 @@ class UserService:
         if (user_db is None):
             self._verify_password(user.password, DUMMY_PASSWORD_HASH)
         else:
-            self._verify_password(user.password, user_db.password)
+            self._verify_password(user.password, user_db.password_hash)
         # If user exists and passwords match, update login and return user
         return await self.repository.update_last_login(user.username)
 
