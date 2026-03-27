@@ -23,23 +23,16 @@ class UserService:
     # CREATE ###################################################################
 
     async def create_user(self, user: UserCreate) -> Optional[UserDBResponse]:
-        """
-        """
         # Check if the username or email is already in the database
-        username_ok = await self.repository.is_username_used(user.username)
-        email_ok = await self.repository.is_email_used(user.email)
+        username_used = await self.repository.is_username_used(user.username)
+        email_used = await self.repository.is_email_used(user.email)
         # Throw exception if user or email are already used
-        if (not username_ok or not email_ok):
+        if (username_used or email_used):
             raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
             )
-        # Raise exception if password longer that 72 Bytes (bcrypt limitations)
-        if (len(user.password) > 72):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=HTTPMessages.INVALID_PASSWORD_LENGTH
-            )
+        self._verify_password_length(user.password)
         # If all OK, then hash user password and create the new user
         password_hash = passwd_mngr.hash_password(user.password)
         return await self.repository.create_user(user, password_hash)
@@ -76,7 +69,7 @@ class UserService:
         if (((user_db.username != user.username) and (not new_username_ok)) or 
             ((user_db.email != user.email) and (not new_email_ok))):
             raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
             )
         # Update the user and return the new values of the database
@@ -96,6 +89,19 @@ class UserService:
         await self.repository.delete_user(username)
 
     ############################################################################
+
+    @staticmethod
+    def _verify_password_length(password: str):
+        """Function to check the validity of the password
+        
+        Raises HTTPException 422 if password longer than 72 Bytes
+        """
+        # Raise exception if password longer that 72 Bytes (bcrypt limitations)
+        if (len(password) > 72):
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=HTTPMessages.INVALID_PASSWORD_LENGTH
+            )
 
     @staticmethod
     def _verify_password(plain_password: str, hashed_password: str):
