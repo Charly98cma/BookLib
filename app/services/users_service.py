@@ -12,9 +12,7 @@ from repositories.users_repository import UserRepository
 DUMMY_PASSWORD_HASH = passwd_mngr.hash_password("dummypassword")
 
 class UserService:
-    """Class to handle all services provided for the User endpoints
-
-    """
+    """Class to handle all services provided for the User endpoints"""
 
     def __init__(self, session: AsyncSession):
         self.repository = UserRepository(session)
@@ -105,9 +103,12 @@ class UserService:
 
     @staticmethod
     def _verify_password(plain_password: str, hashed_password: str):
-        """Function to check a plain password againts a hashed passwords
+        """Function to check a plain password againts a hashed one
         
-        
+        Uses 'bcrypt' to compare a plain password introduced by the user and
+        the hashed password from the database.
+
+        Raises HTTPException 401 if passwords do not match.
         """
         if (not passwd_mngr.verify_password(plain_password, hashed_password)):
             raise HTTPException(

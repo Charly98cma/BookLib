@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# Database URL composed of user-defined env vars to use user PostgreSQL
 DATABASE_URL = (
     "postgresql+asyncpg://{user}:{passwd}@{host}:{port}/{dbname}".format(
         user    = os.getenv('POSTGRES_USER'),
@@ -18,9 +19,11 @@ DATABASE_URL = (
     )
 )
 
+# Create async connection/engine to the database
 engine = create_async_engine(DATABASE_URL,
                              echo=(os.getenv("DEBUG")=="True"))
 
+# Session factory to reuse them if possible
 factory = async_sessionmaker(engine,
                              expire_on_commit=False)
 

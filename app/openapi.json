@@ -10,11 +10,12 @@
         "tags": [
           "users"
         ],
-        "summary": "Get All",
+        "summary": "Get a list with all registered users",
+        "description": "Returns a list with all registered users on the database, or en empty list\nif there are none.",
         "operationId": "get_all_users_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "List with all registered users on the database",
             "content": {
               "application/json": {
                 "schema": {
@@ -40,7 +41,8 @@
         "tags": [
           "users"
         ],
-        "summary": "Create User",
+        "summary": "Create new user",
+        "description": "Inserts a new user, and returns the created database entity, if the values\nfollow the next criteria:\n\n* The *username* and *email* are unique (no other user uses them already)\n* The *email* is in email format\n* The *password* length is less than or equals to 72 Bytes.",
         "operationId": "create_user_users_post",
         "requestBody": {
           "content": {
@@ -54,7 +56,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "User created and returned successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -64,11 +66,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Username or email not unique, or email in incorrect format",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                "example": {
+                  "detail": "< reason for failure >"
                 }
               }
             }
@@ -81,7 +83,8 @@
         "tags": [
           "users"
         ],
-        "summary": "Login",
+        "summary": "User login",
+        "description": "Login user with username and password.",
         "operationId": "login_users_login_put",
         "requestBody": {
           "content": {
@@ -95,7 +98,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "User logged in successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -104,12 +107,22 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "401": {
+            "description": "Wrong credentials",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                "example": {
+                  "detail": "Wrong Credentials! Username and/or password are incorrect."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid format",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Invalid format of username and/or password"
                 }
               }
             }
@@ -122,7 +135,8 @@
         "tags": [
           "users"
         ],
-        "summary": "Update User",
+        "summary": "Update user",
+        "description": "Updates the user information if the new values follow the next criteria:\n\n* The *username* and *email* are unique (no other user uses them already)\n* The *email* is in email format\n* The *password* length is less than or equals to 72 Bytes.",
         "operationId": "update_user_users__username__put",
         "parameters": [
           {
@@ -147,7 +161,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "User with updated information",
             "content": {
               "application/json": {
                 "schema": {
@@ -156,12 +170,22 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "404": {
+            "description": "User not found",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                "example": {
+                  "detail": "There is no user with that username."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "New user or email already registered",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "An user with that username or email already exists."
                 }
               }
             }
@@ -172,7 +196,8 @@
         "tags": [
           "users"
         ],
-        "summary": "Delete User",
+        "summary": "Delete user",
+        "description": "Delete user with the given username",
         "operationId": "delete_user_users__username__delete",
         "parameters": [
           {
@@ -188,6 +213,16 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "There is no user with that username."
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",

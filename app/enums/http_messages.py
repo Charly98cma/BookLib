@@ -5,9 +5,9 @@ __all__ = ['HTTPMessages']
 @_simple_enum(StrEnum)
 
 class HTTPMessages:
-    """HTTP messages to use as detail of HTTPExceptions"""
+    """HTTP custom messages to use as 'detail' of HTTPExceptions"""
 
-    # USER
+    # User endpoint
     USERNAME_DOES_NOT_EXISTS = "There is no user with that username."
     USERNAME_EMAIL_ALREADY_EXISTS = "An user with that username or email already exists."
     WRONG_CREDENTIALS = "Wrong Credentials! Username and/or password are incorrect."
