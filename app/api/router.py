@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 
-from api import users_router
+from api import (
+    users_router,
+    authors_router
+)
 
 # Master router of the API
 router = APIRouter()
@@ -10,3 +13,4 @@ router = APIRouter()
 # Router of each model handled by the API
 
 router.include_router(users_router.router)
+router.include_router(authors_router.router)

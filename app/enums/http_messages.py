@@ -7,8 +7,12 @@ __all__ = ['HTTPMessages']
 class HTTPMessages:
     """HTTP custom messages to use as 'detail' of HTTPExceptions"""
 
-    # User endpoint
+    # Users endpoint
     USERNAME_DOES_NOT_EXISTS = "There is no user with that username."
     USERNAME_EMAIL_ALREADY_EXISTS = "An user with that username or email already exists."
     WRONG_CREDENTIALS = "Wrong Credentials! Username and/or password are incorrect."
     INVALID_PASSWORD_LENGTH = "Invalid password length."
+
+    # Authors endpoint
+    AUTHOR_DOES_NOT_EXIST = "There is no author with that name."
+    AUTHOR_NAME_ALREADY_EXISTS = "Author name already used!"

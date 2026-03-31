@@ -1,6 +1,6 @@
 from db.database import engine
 
-from models.users import User
+from models.users_model import User
 
 async def init_tables():
     # Create all missing tables

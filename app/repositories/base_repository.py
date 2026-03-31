@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class BaseRepository():
@@ -5,3 +7,4 @@ class BaseRepository():
 
     def __init__(self, session: AsyncSession):
         self.db = session
+        self.logger = getLogger(__name__)
