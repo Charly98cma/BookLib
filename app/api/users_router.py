@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends
 from typing import Optional, List, Annotated
 from http import HTTPStatus
@@ -18,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    summary="Create new user",
+    summary="Create a new user",
     status_code=HTTPStatus.OK,
     response_model=UserDBResponse,
     response_description="User created and returned successfully",
@@ -38,7 +39,7 @@ router = APIRouter(
 async def create_user(
     data: UserCreate,
     session: Annotated[AsyncSession, Depends(get_db)]
-):
+) -> Optional[UserDBResponse]:
     """
     Inserts a new user, and returns the created database entity, if the values
     follow the next criteria:
@@ -57,11 +58,11 @@ async def create_user(
     summary="Get a list with all registered users",
     status_code=HTTPStatus.OK,
     response_model=List[Optional[UserDBResponse]],
-    response_description="List with all registered users on the database",
+    response_description="List with all registered users on the database"
 )
 async def get_all(
     session: Annotated[AsyncSession, Depends(get_db)]
-):
+) -> List[UserDBResponse]:
     """
     Returns a list with all registered users on the database, or en empty list
     if there are none.    
@@ -103,7 +104,7 @@ async def get_all(
 async def login(
         data: UserLogin,
         session: Annotated[AsyncSession, Depends(get_db)]
-):
+) -> Optional[UserDBResponse]:
     """
     Login user with username and password.
     """
@@ -111,7 +112,7 @@ async def login(
     return await _service.login(data)
 
 @router.put(
-    "/{username}",
+    "/{user_id}",
     summary="Update user",
     status_code=HTTPStatus.OK,
     response_model=UserDBResponse,
@@ -141,23 +142,23 @@ async def login(
 )
 async def update_user(
     data: UserCreate,
-    username: str,
+    user_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)]
-):
+) -> Optional[UserDBResponse]:
     """
     Updates the user information if the new values follow the next criteria:
 
-    * The *username* and *email* are unique (no other user uses them already)
-    * The *email* is in email format
-    * The *password* length is less than or equals to 72 Bytes.
+    * The new *username* and *email* are unique (no other user uses them already)
+    * The new *email* is in email format
+    * The new *password* length is less than or equals to 72 Bytes.
     """
     _service = UserService(session)
-    return await _service.update_user(username, data)
+    return await _service.update_user(user_id, data)
 
 # DELETE #######################################################################
 
 @router.delete(
-    "/{username}",
+    "/{user_id}",
     summary="Delete user",
     status_code=HTTPStatus.NO_CONTENT,
     responses={
@@ -174,11 +175,11 @@ async def update_user(
     }
 )
 async def delete_user(
-    username: str,
+    user_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> None:
     """
-    Delete user with the given username
+    Delete a user
     """
     _service = UserService(session)
-    await _service.delete_user(username)
+    await _service.delete_user(user_id)

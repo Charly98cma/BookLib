@@ -1,3 +1,4 @@
+import uuid
 from logging import getLogger
 from typing import Optional, List
 from http import HTTPStatus
@@ -20,12 +21,12 @@ class UserService:
 
     # CREATE ###################################################################
 
-    async def create_user(self, user: UserCreate) -> Optional[UserDBResponse]:
+    async def create_user(self, user: UserCreate) -> UserDBResponse:
         # Check if the username or email is already in the database
-        username_used = await self.repository.is_username_used(user.username)
-        email_used = await self.repository.is_email_used(user.email)
+        username_email_used = \
+            await self.repository.is_username_email_used(user.username, user.email)
         # Throw exception if user or email are already used
-        if (username_used or email_used):
+        if (username_email_used):
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
@@ -42,7 +43,7 @@ class UserService:
     
     # UPDATE ###################################################################
 
-    async def login(self, user: UserLogin):
+    async def login(self, user: UserLogin) -> Optional[UserDBResponse]:
         user_db = await self.repository.read_password(user.username)
         # Check againts dummy password to avoid timming attacks
         if (user_db is None):
@@ -52,10 +53,10 @@ class UserService:
         # If user exists and passwords match, update login and return user
         return await self.repository.update_last_login(user.username)
 
-    async def update_user(self, username: str, user: UserCreate):
-        new_username_ok = await self.repository.is_username_used(user.username)
-        new_email_ok = await self.repository.is_email_used(user.email)
-        user_db = await self.repository.read_user(username)
+    async def update_user(self, user_id: uuid.UUID, user: UserCreate) -> Optional[UserDBResponse]:
+        new_username_email_used = \
+            await self.repository.is_username_email_used(user.username, user.email)
+        user_db = await self.repository.read_user(user_id)
         # Check if the given username is in the database
         if (user_db is None):
             raise HTTPException(
@@ -64,33 +65,33 @@ class UserService:
             )
         # Check the new username or email are not already used
         # (in case they are diferent from the already set ones)
-        if (((user_db.username != user.username) and (not new_username_ok)) or 
-            ((user_db.email != user.email) and (not new_email_ok))):
+        if (((user_db.username != user.username) and (new_username_email_used)) or
+            (user_db.email != user.email) and (new_username_email_used)):
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
             )
         # Update the user and return the new values of the database
-        return await self.repository.update_user(username, user)
+        return await self.repository.update_user(user_id, user)
 
     # DELETE ###################################################################
 
-    async def delete_user(self, username: str) -> None:
+    async def delete_user(self, user_id: uuid.UUID) -> None:
         # Check if the username exists and throw exception if does not
-        username_ok = await self.repository.is_username_used(username)
-        if (not username_ok):
+        user_db = await self.repository.read_user(user_id)
+        if (user_db is None):
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
             )
         # Delete user from database
-        await self.repository.delete_user(username)
+        await self.repository.delete_user(user_id)
 
     ############################################################################
 
     @staticmethod
     def _verify_password_length(password: str):
-        """Function to check the validity of the password
+        """Check the validity of the password length
         
         Raises HTTPException 422 if password longer than 72 Bytes
         """
@@ -103,7 +104,7 @@ class UserService:
 
     @staticmethod
     def _verify_password(plain_password: str, hashed_password: str):
-        """Function to check a plain password againts a hashed one
+        """Check a plain password againts a hashed one
         
         Uses 'bcrypt' to compare a plain password introduced by the user and
         the hashed password from the database.

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Annotated, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
@@ -8,7 +9,7 @@ class UserLogin(BaseModel):
     """
 
     username: Annotated[str, Field(examples=["username"])]
-    password: Annotated[str, Field(examples=["password_clear"])]
+    password: Annotated[str, Field(examples=["plain_password"])]
 
 class UserCreate(BaseModel):
     """
@@ -16,7 +17,7 @@ class UserCreate(BaseModel):
     """
 
     username: Annotated[str, Field(examples=["username"])]
-    password: Annotated[str, Field(examples=["password_clear"])]
+    password: Annotated[str, Field(examples=["plain_password"])]
     email: Annotated[EmailStr, Field(examples=["user@example.com"])]
     is_active: Annotated[bool, Field(examples=[True])]
     is_admin: Annotated[bool, Field(examples=[False])]
@@ -34,6 +35,7 @@ class UserDBResponse(BaseModel):
     Pytdantic model for User response
     """
 
+    id: Annotated[uuid.UUID, Field(examples=["52f19e39-20ac-47fd-9df2-53d58c0b3f64"])]
     username: Annotated[str, Field(examples=["username"])]
     email: Annotated[EmailStr, Field(examples=["user@example.com"])]
     is_active: Annotated[bool, Field(examples=[True])]

@@ -7,7 +7,9 @@ from contextlib import asynccontextmanager
 from api.router import router
 from db.init_db import init_tables
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(
+    level=(logging.DEBUG if os.getenv("DEBUG")=="True" else logging.ERROR)
+)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):

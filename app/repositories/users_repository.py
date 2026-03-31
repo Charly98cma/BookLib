@@ -1,14 +1,13 @@
-from logging import getLogger
+import uuid
 from typing import Optional, List, Sequence
 from sqlalchemy import insert
-from sqlalchemy.sql.expression import select, exists, update, delete
+from sqlalchemy.sql.expression import select, exists, update, delete, or_
 from sqlalchemy.sql.functions import func
+from pydantic import EmailStr
 
-from models.users import User
-from schemas.users_schema import UserLogin, UserCreate, UserDBResponse, UserDBSecrets
+from models.users_model import User
+from schemas.users_schema import UserCreate, UserDBResponse, UserDBSecrets
 from repositories.base_repository import BaseRepository
-
-logger = getLogger(__name__)
 
 class UserRepository(BaseRepository):
 
@@ -28,18 +27,19 @@ class UserRepository(BaseRepository):
             )
             .returning(User)
         )
+        self.logger.debug("create_user() - stmt = ", stmt)
         user_db = (await self.db.execute(stmt)).scalar_one()
         await self.db.commit()
         return UserDBResponse.model_validate(user_db)
 
     # READ #####################################################################
 
-    async def read_user(self, _username: str) -> Optional[UserDBResponse]:
+    async def read_user(self, _user_id: uuid.UUID) -> Optional[UserDBResponse]:
         stmt = (
             select(User)
-            .filter_by(username = _username)
-            .limit(1)
+            .where(User.id == _user_id)
         )
+        self.logger.debug("read_user() - stmt = ", stmt)
         user_db = (await self.db.execute(stmt)).scalar_one_or_none()
         if (user_db is None):
             return None
@@ -48,9 +48,12 @@ class UserRepository(BaseRepository):
     async def read_password(self, _username: str) -> Optional[UserDBSecrets]:
         stmt = (
             select(User.password_hash)
-            .filter_by(username=_username, is_active=True)
-            .limit(1)
+            .where(
+                User.username==_username,
+                User.is_active==True
+            )
         )
+        self.logger.debug("read_password() - stmt = ", stmt)
         user_db = (await self.db.execute(stmt)).scalar_one_or_none()
         if (user_db is None):
             return None
@@ -58,39 +61,37 @@ class UserRepository(BaseRepository):
 
     async def read_all_users(self) -> List[UserDBResponse]:
         stmt = select(User)
+        self.logger.debug("read_all_users() - stmt = ", stmt)
         user_db_list = (await self.db.execute(stmt)).scalars().all()
         return self._map_users_to_schema_list(user_db_list)
 
-    async def is_username_used(self, _username: str) -> bool:
+    async def is_username_email_used(self, _username: str, _email: EmailStr) -> bool:
         stmt = (
             select(
                 exists()
-                .where(User.username == _username)
+                .where(
+                    or_(
+                        User.username == _username,
+                        User.email == _email
+                    )
+                )
             )
         )
-        result = (await self.db.execute(stmt)).scalar()
-        return bool(result)
-
-    async def is_email_used(self, _email: str) -> bool:
-        stmt = (
-            select(
-                exists()
-                .where(User.email == _email)
-            )
-        )
+        self.logger.debug("is_username_email_used() - stmt = ", stmt)
         result = (await self.db.execute(stmt)).scalar()
         return bool(result)
 
     # UPDATE ###################################################################
 
-    async def update_user(self, _username: str, _user: UserCreate) -> UserDBResponse:
+    async def update_user(self, _user_id: uuid.UUID, _user: UserCreate) -> UserDBResponse:
         stmt = (
             update(User)
-            .where(User.username==_username)
+            .where(User.id==_user_id)
             .values(**_user.__dict__)
             .values(updated_at=func.now())
             .returning(User)
         )
+        self.logger.debug("update_user() - stmt = ", stmt)
         user_db = (await self.db.execute(stmt)).scalar_one()
         await self.db.commit()
         return UserDBResponse.model_validate(user_db)
@@ -102,22 +103,24 @@ class UserRepository(BaseRepository):
             .values(last_login=func.now())
             .returning(User)
         )
+        self.logger.debug("update_last_login() - stmt = ", stmt)
         user_db = (await self.db.execute(stmt)).scalar_one()
         await self.db.commit()
         return UserDBResponse.model_validate(user_db)
 
     # DELETE ###################################################################
     
-    async def delete_user(self, _username: str) -> None:
+    async def delete_user(self, user_id: uuid.UUID) -> None:
         stmt = (
             delete(User)
-            .where(User.username==_username)
+            .where(User.id==user_id)
         )
+        self.logger.debug("delete_user() - stmt = ", stmt)
         await self.db.execute(stmt)
         await self.db.commit()
 
     ############################################################################
 
     @staticmethod
-    def _map_users_to_schema_list(users: Sequence[User]) -> List[UserDBResponse]:
-        return [UserDBResponse.model_validate(user) for user in users]
+    def _map_users_to_schema_list(users_db_list: Sequence[User]) -> List[UserDBResponse]:
+        return [UserDBResponse.model_validate(user) for user in users_db_list]
