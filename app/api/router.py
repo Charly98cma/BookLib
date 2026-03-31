@@ -2,7 +2,9 @@ from fastapi import APIRouter
 
 from api import (
     users_router,
-    authors_router
+    authors_router,
+    genres_router,
+    publishers_router,
 )
 
 # Master router of the API
@@ -14,3 +16,5 @@ router = APIRouter()
 
 router.include_router(users_router.router)
 router.include_router(authors_router.router)
+router.include_router(genres_router.router)
+router.include_router(publishers_router.router)

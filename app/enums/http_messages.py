@@ -16,3 +16,11 @@ class HTTPMessages:
     # Authors endpoint
     AUTHOR_DOES_NOT_EXIST = "There is no author with that name."
     AUTHOR_NAME_ALREADY_EXISTS = "Author name already used!"
+
+    # Genres endpoint
+    GENRE_DOES_NOT_EXIST = "No genre with given id."
+    GENRE_NAME_ALREADY_EXISTS = "Genre name already used!"
+
+    # Publishers endpoint
+    PUBLISHER_DOES_NOT_EXIST = "No publisher with given id."
+    PUBLISHER_NAME_ALREADY_EXISTS = "Publisher name already used!"
