@@ -41,7 +41,7 @@
         "tags": [
           "users"
         ],
-        "summary": "Create new user",
+        "summary": "Create a new user",
         "description": "Inserts a new user, and returns the created database entity, if the values\nfollow the next criteria:\n\n* The *username* and *email* are unique (no other user uses them already)\n* The *email* is in email format\n* The *password* length is less than or equals to 72 Bytes.",
         "operationId": "create_user_users_post",
         "requestBody": {
@@ -130,22 +130,23 @@
         }
       }
     },
-    "/users/{username}": {
+    "/users/{user_id}": {
       "put": {
         "tags": [
           "users"
         ],
         "summary": "Update user",
-        "description": "Updates the user information if the new values follow the next criteria:\n\n* The *username* and *email* are unique (no other user uses them already)\n* The *email* is in email format\n* The *password* length is less than or equals to 72 Bytes.",
-        "operationId": "update_user_users__username__put",
+        "description": "Updates the user information if the new values follow the next criteria:\n\n* The new *username* and *email* are unique (no other user uses them already)\n* The new *email* is in email format\n* The new *password* length is less than or equals to 72 Bytes.",
+        "operationId": "update_user_users__user_id__put",
         "parameters": [
           {
-            "name": "username",
+            "name": "user_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Username"
+              "format": "uuid",
+              "title": "User Id"
             }
           }
         ],
@@ -197,16 +198,17 @@
           "users"
         ],
         "summary": "Delete user",
-        "description": "Delete user with the given username",
-        "operationId": "delete_user_users__username__delete",
+        "description": "Delete a user",
+        "operationId": "delete_user_users__user_id__delete",
         "parameters": [
           {
-            "name": "username",
+            "name": "user_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Username"
+              "format": "uuid",
+              "title": "User Id"
             }
           }
         ],
@@ -236,10 +238,260 @@
           }
         }
       }
+    },
+    "/authors": {
+      "get": {
+        "tags": [
+          "authors"
+        ],
+        "summary": "Get all authors",
+        "description": "Returns a list with all authors in the database, or an empty list if there\nare none.",
+        "operationId": "read_all_authors_authors_get",
+        "responses": {
+          "200": {
+            "description": "List with all authors in the database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuthorDBResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Read All Authors Authors Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "authors"
+        ],
+        "summary": "Create author",
+        "description": "Inserts a new author and returns the created database entity, if:\n\n* The *name* is unique (no other author already registered with it)",
+        "operationId": "create_author_authors_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Author created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorDBResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid format",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Author name already used!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authors/{author_id}": {
+      "put": {
+        "tags": [
+          "authors"
+        ],
+        "summary": "Update author",
+        "description": "Update the author information with the new values if:\n\n* The *name* is unique (no other author already registered with it)",
+        "operationId": "update_author_authors__author_id__put",
+        "parameters": [
+          {
+            "name": "author_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Author Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Author updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorDBResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Author not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "There is no author with that name."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid format",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Author name already used!"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "authors"
+        ],
+        "summary": "Delete author",
+        "description": "Delete the given author",
+        "operationId": "delete_author_authors__author_id__delete",
+        "parameters": [
+          {
+            "name": "author_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Author Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Author not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "There is no author with that name."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AuthorCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Robert S.A. Corey"
+            ]
+          },
+          "biography": {
+            "type": "string",
+            "title": "Biography",
+            "examples": [
+              "So much text, oh my god"
+            ]
+          },
+          "photo_path": {
+            "type": "string",
+            "title": "Photo Path",
+            "examples": [
+              "/path/to/photo.png"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "biography",
+          "photo_path"
+        ],
+        "title": "AuthorCreate",
+        "description": "Pydantic model for Author creation"
+      },
+      "AuthorDBResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "examples": [
+              "52f19e39-20ac-47fd-9df2-53d58c0b3f64"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Robert S.A. Corey"
+            ]
+          },
+          "biography": {
+            "type": "string",
+            "title": "Biography",
+            "examples": [
+              "So much text, oh my god"
+            ]
+          },
+          "photo_path": {
+            "type": "string",
+            "title": "Photo Path",
+            "examples": [
+              "/path/to/photo.png"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "biography",
+          "photo_path"
+        ],
+        "title": "AuthorDBResponse",
+        "description": "Pydantic model for Author response"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -266,7 +518,7 @@
             "type": "string",
             "title": "Password",
             "examples": [
-              "password_clear"
+              "plain_password"
             ]
           },
           "email": {
@@ -305,6 +557,14 @@
       },
       "UserDBResponse": {
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "examples": [
+              "52f19e39-20ac-47fd-9df2-53d58c0b3f64"
+            ]
+          },
           "username": {
             "type": "string",
             "title": "Username",
@@ -368,6 +628,7 @@
         },
         "type": "object",
         "required": [
+          "id",
           "username",
           "email",
           "is_active",
@@ -392,7 +653,7 @@
             "type": "string",
             "title": "Password",
             "examples": [
-              "password_clear"
+              "plain_password"
             ]
           }
         },
