@@ -77,7 +77,7 @@ async def read_all_authors(
     response_description="Author updated successfully",
     responses={
         HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Invalid format",
+            "description": "Author name already used",
             "content": {
                 "application/json": {
                     "example": {

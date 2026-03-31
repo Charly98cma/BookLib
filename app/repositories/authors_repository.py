@@ -1,8 +1,7 @@
 import uuid
 from typing import Optional, List, Sequence
 from sqlalchemy import insert
-from sqlalchemy.sql.expression import select, exists, update, delete
-from sqlalchemy.sql.functions import func
+from sqlalchemy.sql.expression import select, update, delete
 
 from models.authors_model import Author
 from schemas.authors_schema import AuthorCreate, AuthorDBResponse
