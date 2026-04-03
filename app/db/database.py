@@ -21,7 +21,7 @@ DATABASE_URL = (
 
 # Create async connection/engine to the database
 engine = create_async_engine(DATABASE_URL,
-                             echo=(os.getenv("DEBUG")=="True"))
+                             echo=bool(os.getenv("DEBUG")))
 
 # Session factory to reuse them if possible
 factory = async_sessionmaker(engine,
