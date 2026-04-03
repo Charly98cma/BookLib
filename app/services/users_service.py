@@ -4,6 +4,7 @@ from typing import Optional, List
 from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import EmailStr
 
 import tools.password_manager as passwd_mngr
 from enums.http_messages import HTTPMessages
@@ -22,15 +23,10 @@ class UserService:
     # CREATE ###################################################################
 
     async def create_user(self, user: UserCreate) -> UserDBResponse:
-        # Check if the username or email is already in the database
-        username_email_used = \
-            await self.repository.is_username_email_used(user.username, user.email)
-        # Throw exception if user or email are already used
-        if (username_email_used):
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
-            )
+        # Verify uniqueness of username and email
+        await self._check_username_unique(user.username)
+        await self._check_email_unique(user.email)
+        # Verify password length
         self._verify_password_length(user.password)
         # If all OK, then hash user password and create the new user
         password_hash = passwd_mngr.hash_password(user.password)
@@ -54,40 +50,46 @@ class UserService:
         return await self.repository.update_last_login(user.username)
 
     async def update_user(self, user_id: uuid.UUID, user: UserCreate) -> Optional[UserDBResponse]:
-        new_username_email_used = \
-            await self.repository.is_username_email_used(user.username, user.email)
-        user_db = await self.repository.read_user(user_id)
-        # Check if the given username is in the database
-        if (user_db is None):
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
-            )
-        # Check the new username or email are not already used
-        # (in case they are diferent from the already set ones)
-        if (((user_db.username != user.username) and (new_username_email_used)) or
-            (user_db.email != user.email) and (new_username_email_used)):
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
-            )
+        user_db = await self._read_user(user_id)
+        if (user.username != user_db.username):
+            await self._check_username_unique(user_db.username)
+        if (user.email != user_db.email):
+            await self._check_email_unique(user_db.email)
         # Update the user and return the new values of the database
         return await self.repository.update_user(user_id, user)
 
     # DELETE ###################################################################
 
     async def delete_user(self, user_id: uuid.UUID) -> None:
-        # Check if the username exists and throw exception if does not
+        await self._read_user(user_id)
+        await self.repository.delete_user(user_id)
+
+    # AUXILIAR FUNCTIONS #######################################################
+
+    async def _read_user(self, user_id: uuid.UUID) -> UserDBResponse:
         user_db = await self.repository.read_user(user_id)
         if (user_db is None):
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
             )
-        # Delete user from database
-        await self.repository.delete_user(user_id)
+        return user_db
+    
+    async def _check_username_unique(self, username: str) -> None:
+        username_unique = await self.repository.is_username_unique(username)
+        if (not username_unique):
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=HTTPMessages.USERNAME_ALREADY_EXISTS
+            )
 
-    ############################################################################
+    async def _check_email_unique(self, email: EmailStr) -> None:
+        email_unique = await self.repository.is_email_unique(email)
+        if (not email_unique):
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=HTTPMessages.EMAIL_ALREADY_EXISTS
+            )
 
     @staticmethod
     def _verify_password_length(password: str):

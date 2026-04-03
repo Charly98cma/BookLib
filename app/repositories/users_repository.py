@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List, Sequence
 from sqlalchemy import insert
-from sqlalchemy.sql.expression import select, exists, update, delete, or_
+from sqlalchemy.sql.expression import select, update, delete
 from sqlalchemy.sql.functions import func
 from pydantic import EmailStr
 
@@ -65,21 +65,21 @@ class UserRepository(BaseRepository):
         user_db_list = (await self.db.execute(stmt)).scalars().all()
         return self._map_users_to_schema_list(user_db_list)
 
-    async def is_username_email_used(self, _username: str, _email: EmailStr) -> bool:
+    async def is_username_unique(self, username: str) -> bool:
         stmt = (
-            select(
-                exists()
-                .where(
-                    or_(
-                        User.username == _username,
-                        User.email == _email
-                    )
-                )
-            )
+            select(User)
+            .where(User.username == username)
         )
-        self.logger.debug("is_username_email_used() - stmt = ", stmt)
-        result = (await self.db.execute(stmt)).scalar()
-        return bool(result)
+        user_db = (await self.db.execute(stmt)).scalar_one_or_none()
+        return (user_db == None)
+
+    async def is_email_unique(self, email: EmailStr) -> bool:
+        stmt = (
+            select(User)
+            .where(User.email == email)
+        )
+        user_db = (await self.db.execute(stmt)).scalar_one_or_none()
+        return (user_db == None)
 
     # UPDATE ###################################################################
 

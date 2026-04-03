@@ -20,14 +20,7 @@ class AuthorService:
     # CREATE ###################################################################
 
     async def create_author(self, author: AuthorCreate) -> Optional[AuthorDBResponse]:
-        author_unique = await self.repository.is_author_unique(author.name)
-        # Check the name is not already registered to another author
-        if (not author_unique):
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS
-            )
-        # Create new Author entity
+        await self._check_author_unique(author.name)
         return await self.repository.create_author(author)
 
     # READ #####################################################################
@@ -38,26 +31,20 @@ class AuthorService:
     # UPDATE ###################################################################
 
     async def update_author(self, author_id: uuid.UUID, author: AuthorCreate) -> AuthorDBResponse:
-        author_db = await self.repository.read_author(author_id)
-        author_unique = await self.repository.is_author_unique(author.name)
-        # Check the author exists
-        if (author_db is None):
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=HTTPMessages.AUTHOR_DOES_NOT_EXIST
-            )
-        # Raise exception if new name is not unique
-        if ((author_db.name != author.name) and not author_unique):
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS
-            )
-        # Update author with new values
+        author_db = await self._read_author(author_id)
+        if (author.name != author_db.name):
+            await self._check_author_unique(author.name)
         return await self.repository.update_author(author_id, author)
         
     # DELETE ###################################################################
 
     async def delete_author(self, author_id: uuid.UUID) -> None:
+        await self._read_author(author_id)
+        await self.repository.delete_author(author_id)
+
+    # AUXILIAR FUNCTIONS #######################################################
+
+    async def _read_author(self, author_id: uuid.UUID) -> AuthorDBResponse:
         author_db = await self.repository.read_author(author_id)
         # Check the author exists
         if (author_db is None):
@@ -65,5 +52,13 @@ class AuthorService:
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=HTTPMessages.AUTHOR_DOES_NOT_EXIST
             )
-        # Delete the author
-        await self.repository.delete_author(author_id)
+        return author_db
+
+    async def _check_author_unique(self, author_name: str) -> None:
+        author_unique = await self.repository.is_author_unique(author_name)
+        # Check the name is not already registered to another author
+        if (not author_unique):
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS
+            )

@@ -133,6 +133,6 @@ async def update_genre(
 async def delete_genre(
     genre_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)]
-):
+) -> None:
     _service = GenreService(session)
     await _service.delete_genre(genre_id)    

@@ -64,7 +64,7 @@ async def get_all(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> List[UserDBResponse]:
     """
-    Returns a list with all registered users on the database, or en empty list
+    Returns a list with all registered users on the database, or an empty list
     if there are none.    
     """
     _service = UserService(session)
@@ -133,7 +133,7 @@ async def login(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.USERNAME_EMAIL_ALREADY_EXISTS
+                        "detail": HTTPMessages.USERNAME_ALREADY_EXISTS
                     }
                 }
             }
@@ -179,7 +179,7 @@ async def delete_user(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     """
-    Delete a user
+    Delete the given user
     """
     _service = UserService(session)
     await _service.delete_user(user_id)
