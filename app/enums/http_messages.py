@@ -25,3 +25,11 @@ class HTTPMessages:
     # Publishers endpoint
     PUBLISHER_DOES_NOT_EXIST = "No publisher with given ID."
     PUBLISHER_NAME_ALREADY_EXISTS = "Publisher name already used!"
+
+    # Books endpoint
+    BOOK_DOES_NOT_EXISTS = "No book with given ID"
+    BOOK_ISBN10_NOT_UNIQUE = "ISBN 10 is already being used!"
+    BOOK_ISBN13_NOT_UNIQUE = "ISBN 13 is already being used!"
+    BOOK_HC_ID_NOT_UNIQUE  = "Hardcover ID is already being used!"
+
+

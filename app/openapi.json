@@ -11,7 +11,7 @@
           "users"
         ],
         "summary": "Get a list with all registered users",
-        "description": "Returns a list with all registered users on the database, or en empty list\nif there are none.",
+        "description": "Returns a list with all registered users on the database, or an empty list\nif there are none.",
         "operationId": "get_all_users_get",
         "responses": {
           "200": {
@@ -186,7 +186,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "An user with that username or email already exists."
+                  "detail": "Username is already registered."
                 }
               }
             }
@@ -198,7 +198,7 @@
           "users"
         ],
         "summary": "Delete user",
-        "description": "Delete a user",
+        "description": "Delete the given user",
         "operationId": "delete_user_users__user_id__delete",
         "parameters": [
           {
@@ -222,6 +222,181 @@
               "application/json": {
                 "example": {
                   "detail": "There is no user with that username."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/books": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get list of books",
+        "description": "Yields a list with all the books in the database, or an empty list if there\nare none.",
+        "operationId": "read_all_books_books_get",
+        "responses": {
+          "200": {
+            "description": "List with all books on the database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookDBResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Read All Books Books Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Create a new book",
+        "description": "Creates a new book in the database, and returns the newly created entity, if:\n\n* The value of `isbn_10` is not already used by another book\n* The value of `isbn_13` is not already used by another book\n* If present, the value of `hc_book_id` is not already used by another book",
+        "operationId": "create_book_books_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Book created and returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDBResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ISBN 10 / ISBN 13 / Hardcover ID already being used (must be unique)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "ISBN 10 is already being used!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/books/{book_id}": {
+      "put": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Update a book",
+        "description": "Updates a book of the database, and returns the entity with its updated\nvalues if:\n\n* The value of `isbn_10` is not already used by another book\n* The value of `isbn_13` is not already used by another book\n* If present, the value of `hc_book_id` is not already used by another book",
+        "operationId": "update_book_books__book_id__put",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book with updated values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDBResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No book with given ID"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ISBN 10 / ISBN 13 / Hardcover ID already being used (must be unique)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "ISBN 10 is already being used!"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Delete book",
+        "description": "Deletes the given book",
+        "operationId": "delete_book_books__book_id__delete",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No book with given ID"
                 }
               }
             }
@@ -526,7 +701,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "No genre with given id."
+                  "detail": "No genre with given ID."
                 }
               }
             }
@@ -570,7 +745,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "No genre with given id."
+                  "detail": "No genre with given ID."
                 }
               }
             }
@@ -700,7 +875,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "No publisher with given id."
+                  "detail": "No publisher with given ID."
                 }
               }
             }
@@ -744,7 +919,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "No publisher with given id."
+                  "detail": "No publisher with given ID."
                 }
               }
             }
@@ -840,13 +1015,299 @@
         "title": "AuthorDBResponse",
         "description": "Pydantic model for Author response"
       },
+      "BookCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "examples": [
+              "Leviathan Wakes"
+            ]
+          },
+          "subtitle": {
+            "type": "string",
+            "title": "Subtitle",
+            "examples": [
+              "The Expanse"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "examples": [
+              ""
+            ]
+          },
+          "num_pages": {
+            "type": "integer",
+            "title": "Num Pages",
+            "examples": [
+              592
+            ]
+          },
+          "is_physical": {
+            "type": "integer",
+            "title": "Is Physical",
+            "examples": [
+              true
+            ]
+          },
+          "isbn_10": {
+            "type": "string",
+            "title": "Isbn 10",
+            "examples": [
+              "1841499897"
+            ]
+          },
+          "isbn_13": {
+            "type": "string",
+            "title": "Isbn 13",
+            "examples": [
+              "978-1841499895"
+            ]
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang",
+            "examples": [
+              "en"
+            ]
+          },
+          "publishing_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Publishing Date",
+            "examples": [
+              "2012-05-20"
+            ]
+          },
+          "hc_book_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc Book Id",
+            "examples": [
+              "leviathan-wakes"
+            ]
+          },
+          "hc_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc Rating",
+            "examples": [
+              4.3
+            ]
+          },
+          "hc_n_ratings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc N Ratings",
+            "examples": [
+              2296
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "subtitle",
+          "description",
+          "num_pages",
+          "is_physical",
+          "isbn_10",
+          "isbn_13",
+          "lang",
+          "publishing_date",
+          "hc_book_id",
+          "hc_rating",
+          "hc_n_ratings"
+        ],
+        "title": "BookCreate",
+        "description": "    "
+      },
+      "BookDBResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "examples": [
+              "52f19e39-20ac-47fd-9df2-53d58c0b3f64"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "examples": [
+              "Leviathan Wakes"
+            ]
+          },
+          "subtitle": {
+            "type": "string",
+            "title": "Subtitle",
+            "examples": [
+              "The Expanse"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "examples": [
+              ""
+            ]
+          },
+          "num_pages": {
+            "type": "integer",
+            "title": "Num Pages",
+            "examples": [
+              592
+            ]
+          },
+          "is_physical": {
+            "type": "integer",
+            "title": "Is Physical",
+            "examples": [
+              true
+            ]
+          },
+          "isbn_10": {
+            "type": "string",
+            "title": "Isbn 10",
+            "examples": [
+              "1841499897"
+            ]
+          },
+          "isbn_13": {
+            "type": "string",
+            "title": "Isbn 13",
+            "examples": [
+              "978-1841499895"
+            ]
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang",
+            "examples": [
+              "en"
+            ]
+          },
+          "publishing_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Publishing Date",
+            "examples": [
+              "2012-05-20"
+            ]
+          },
+          "hc_book_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc Book Id",
+            "examples": [
+              "leviathan-wakes"
+            ]
+          },
+          "hc_rating": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc Rating",
+            "examples": [
+              4.3
+            ]
+          },
+          "hc_n_ratings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hc N Ratings",
+            "examples": [
+              2296
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "examples": [
+              "2026-03-24T16:14:21.554Z"
+            ]
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "examples": [
+              "2026-03-24T16:14:21.554Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "subtitle",
+          "description",
+          "num_pages",
+          "is_physical",
+          "isbn_10",
+          "isbn_13",
+          "lang",
+          "publishing_date",
+          "hc_book_id",
+          "hc_rating",
+          "hc_n_ratings",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BookDBResponse",
+        "description": "    "
+      },
       "GenreCreate": {
         "properties": {
           "name": {
             "type": "string",
             "title": "Name",
             "examples": [
-              "Sci-fi"
+              "Sci-Fi"
             ]
           }
         },
@@ -871,7 +1332,7 @@
             "type": "string",
             "title": "Name",
             "examples": [
-              "Sci-fi"
+              "Sci-Fi"
             ]
           }
         },
@@ -943,14 +1404,14 @@
             "type": "string",
             "title": "Username",
             "examples": [
-              "username"
+              ""
             ]
           },
           "password": {
             "type": "string",
             "title": "Password",
             "examples": [
-              "plain_password"
+              "PlainPassword"
             ]
           },
           "email": {
@@ -958,7 +1419,7 @@
             "format": "email",
             "title": "Email",
             "examples": [
-              "user@example.com"
+              "user@email.com"
             ]
           },
           "is_active": {
@@ -994,14 +1455,14 @@
             "format": "uuid",
             "title": "Id",
             "examples": [
-              "52f19e39-20ac-47fd-9df2-53d58c0b3f64"
+              ""
             ]
           },
           "username": {
             "type": "string",
             "title": "Username",
             "examples": [
-              "username"
+              ""
             ]
           },
           "email": {
@@ -1009,7 +1470,7 @@
             "format": "email",
             "title": "Email",
             "examples": [
-              "user@example.com"
+              "user@email.com"
             ]
           },
           "is_active": {
@@ -1078,14 +1539,14 @@
             "type": "string",
             "title": "Username",
             "examples": [
-              "username"
+              ""
             ]
           },
           "password": {
             "type": "string",
             "title": "Password",
             "examples": [
-              "plain_password"
+              "PlainPassword"
             ]
           }
         },
