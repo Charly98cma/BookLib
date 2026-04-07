@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    summary="Create a new user",
+    summary="Create new user",
     status_code=HTTPStatus.OK,
     response_model=UserDBResponse,
     response_description="User created and returned successfully",
@@ -41,9 +41,9 @@ async def create_user(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[UserDBResponse]:
     """
-    Inserts a new user, and returns the created database entity, if the values
-    follow the next criteria:
-
+    Create a new User entity on the database (and returns newly created
+    entity), if:
+    
     * The *username* and *email* are unique (no other user uses them already)
     * The *email* is in email format
     * The *password* length is less than or equals to 72 Bytes. 
@@ -55,7 +55,7 @@ async def create_user(
 
 @router.get(
     "",
-    summary="Get a list with all registered users",
+    summary="Get all users",
     status_code=HTTPStatus.OK,
     response_model=List[Optional[UserDBResponse]],
     response_description="List with all registered users on the database"
@@ -64,8 +64,8 @@ async def get_all(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> List[UserDBResponse]:
     """
-    Returns a list with all registered users on the database, or an empty list
-    if there are none.    
+    Return the list of User entities registered on the database, or an empty
+    list if there are none.
     """
     _service = UserService(session)
     return await _service.read_all_users()
@@ -74,7 +74,7 @@ async def get_all(
 
 @router.put(
     "/login",
-    summary="User login",
+    summary="Login user",
     status_code=HTTPStatus.OK,
     response_model=UserDBResponse,
     response_description="User logged in successfully",
@@ -146,7 +146,7 @@ async def update_user(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[UserDBResponse]:
     """
-    Updates the user information if the new values follow the next criteria:
+    Update the given User entity with the new provided values, if:
 
     * The new *username* and *email* are unique (no other user uses them already)
     * The new *email* is in email format
@@ -179,7 +179,7 @@ async def delete_user(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     """
-    Delete the given user
+    Delete the given User.
     """
     _service = UserService(session)
     await _service.delete_user(user_id)

@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    summary="Create a new book",
+    summary="Create new book",
     status_code=HTTPStatus.OK,
     response_model=BookDBResponse,
     response_description="Book created and returned successfully",
@@ -54,7 +54,7 @@ async def create_book(
 
 @router.get(
     "",
-    summary="Get list of books",
+    summary="Get all books",
     status_code=HTTPStatus.OK,
     response_model=List[BookDBResponse],
     response_description="List with all books on the database"
@@ -73,7 +73,7 @@ async def read_all_books(
 
 @router.put(
     "/{book_id}",
-    summary="Update a book",
+    summary="Update book",
     status_code=HTTPStatus.OK,
     response_model=BookDBResponse,
     response_description="Book with updated values",

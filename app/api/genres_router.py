@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    summary="Create genre",
+    summary="Create new genre",
     status_code=HTTPStatus.OK,
     response_model=GenreDBResponse,
     response_description="Genre created successfully",
@@ -41,9 +41,10 @@ async def create_genre(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[GenreDBResponse]:
     """
-    Inserts a new genre and returns the created database entity, if:
+    Create a new Genre entity on the database (and returns newly created
+    entity), if:
 
-    * The *name* is unique (no other genre already registered with it)
+    * The *name* is unique (no other Genre already registered with it)
     """
     _service = GenreService(session)
     return await _service.create_genre(data)
@@ -61,8 +62,8 @@ async def read_all_genres(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> List[GenreDBResponse]:
     """
-    Returns a list with all genres in the database,
-    or an empty list if there are none.
+    Return the list of Genre entities registered on the database, or an empty
+    list if there are none.
     """
     _service = GenreService(session)
     return await _service.read_all_genres()
@@ -104,9 +105,9 @@ async def update_genre(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[GenreDBResponse]:
     """
-    Update the genre information with the new values if:
+    Update the given Author entity with the new provided values, if:
 
-    * The *name* is unique (no other genre already registered with it)
+    * The *name* is unique (no other Genre already registered with it)
     """    
     _service = GenreService(session)
     return await _service.update_genre(genre_id, data)    
@@ -134,5 +135,8 @@ async def delete_genre(
     genre_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> None:
+    """
+    Delete the given Genre.
+    """
     _service = GenreService(session)
     await _service.delete_genre(genre_id)    

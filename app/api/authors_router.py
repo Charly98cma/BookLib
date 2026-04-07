@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    summary="Create author",
+    summary="Create new author",
     status_code=HTTPStatus.OK,
     response_model=AuthorDBResponse,
     response_description="Author created successfully",
@@ -41,9 +41,10 @@ async def create_author(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[AuthorDBResponse]:
     """
-    Inserts a new author and returns the created database entity, if:
+    Create a new Author entity on the database (and returns newly created
+    entity), if:
 
-    * The *name* is unique (no other author already registered with it)
+    * The *name* is unique (no other Author entity already registered with it)
     """
     _service = AuthorService(session)
     return await _service.create_author(data)
@@ -61,8 +62,8 @@ async def read_all_authors(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> List[AuthorDBResponse]:
     """
-    Returns a list with all authors in the database, or an empty list if there
-    are none.
+    Return the list of Author entities registered on the database, or an empty
+    list if there are none.
     """
     _service=AuthorService(session)
     return await _service.read_all_authors()
@@ -104,7 +105,7 @@ async def update_author(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> Optional[AuthorDBResponse]:
     """
-    Update the author information with the new values if:
+    Update the given Author entity with the new provided values, if:
 
     * The *name* is unique (no other author already registered with it)
     """
@@ -135,7 +136,7 @@ async def delete_author(
     session: Annotated[AsyncSession, Depends(get_db)]
 ) -> None:
     """
-    Delete the given author
+    Delete the given Author.
     """
     _service=AuthorService(session)
     await _service.delete_author(author_id)    
