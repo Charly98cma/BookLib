@@ -1,12 +1,16 @@
 import uuid
 from fastapi import APIRouter, Depends
+#from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional, List, Annotated
 from http import HTTPStatus
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from enums.http_messages import HTTPMessages
-from db.database import get_db
+from sqlalchemy.orm import Session
+
+from core.http_messages import HTTPMessages
+from core.db import get_db
+
 from schemas.users_schema import UserCreate, UserLogin, UserDBResponse
+
 from services.users_service import UserService
 
 # User router
@@ -24,32 +28,40 @@ router = APIRouter(
     response_model=UserDBResponse,
     response_description="User created and returned successfully",
     responses={
-        HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Username or email not unique, or email in incorrect format",
+        HTTPStatus.CONFLICT: {
+            "description": "Username/Email already in use",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "< reason for failure >"
+                        "detail": "Username/Email 'X' is already in use."
                     }
                 }
             }
         },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
+                }
+            }
+        }
     }
 )
-async def create_user(
+def create_user(
     data: UserCreate,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[UserDBResponse]:
     """
     Create a new User entity on the database (and returns newly created
     entity), if:
     
-    * The *username* and *email* are unique (no other user uses them already)
-    * The *email* is in email format
-    * The *password* length is less than or equals to 72 Bytes. 
+    * The `username` and `email` are unique (no other user uses them already)
+    * The `email` is in email format
+    * The `password` length is less than or equals to 72 Bytes. 
     """
     _service = UserService(session)
-    return await _service.create_user(data)
+    return _service.create_user(data)
 
 # READ #########################################################################
 
@@ -60,15 +72,15 @@ async def create_user(
     response_model=List[Optional[UserDBResponse]],
     response_description="List with all registered users on the database"
 )
-async def get_all(
-    session: Annotated[AsyncSession, Depends(get_db)]
+def get_all(
+    session: Annotated[Session, Depends(get_db)]
 ) -> List[UserDBResponse]:
     """
     Return the list of User entities registered on the database, or an empty
     list if there are none.
     """
     _service = UserService(session)
-    return await _service.read_all_users()
+    return _service.read_all_users()
 
 # UPDATE #######################################################################
 
@@ -90,26 +102,24 @@ async def get_all(
             }
         },
         HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Invalid format",
+            "description": "Invalid fields",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Invalid format of username and/or password"
-                    }
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def login(
+def login(
         data: UserLogin,
-        session: Annotated[AsyncSession, Depends(get_db)]
+        session: Annotated[Session, Depends(get_db)]
 ) -> Optional[UserDBResponse]:
     """
     Login user with username and password.
     """
     _service = UserService(session)
-    return await _service.login(data)
+    return _service.login(data)
 
 @router.put(
     "/{user_id}",
@@ -123,37 +133,45 @@ async def login(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.USERNAME_DOES_NOT_EXISTS
+                        "detail": HTTPMessages.USERNAME_DOES_NOT_EXISTS.format("X")
+                    }
+                }
+            }
+        },
+        HTTPStatus.CONFLICT: {
+            "description": "Username/Email already in use",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Username/Email 'X' is already in use."
                     }
                 }
             }
         },
         HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "New user or email already registered",
+            "description": "Invalid fields",
             "content": {
-                "application/json": {
-                    "example": {
-                        "detail": HTTPMessages.USERNAME_ALREADY_EXISTS
-                    }
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def update_user(
+def update_user(
     data: UserCreate,
     user_id: uuid.UUID,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[UserDBResponse]:
     """
     Update the given User entity with the new provided values, if:
 
-    * The new *username* and *email* are unique (no other user uses them already)
-    * The new *email* is in email format
-    * The new *password* length is less than or equals to 72 Bytes.
+    * The new `username` and `email` are unique (no other user uses them already)
+    * The new `email` is in email format
+    * The new `password` length is less than or equals to 72 Bytes.
     """
     _service = UserService(session)
-    return await _service.update_user(user_id, data)
+    return _service.update_user(user_id, data)
 
 # DELETE #######################################################################
 
@@ -167,19 +185,27 @@ async def update_user(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.USERNAME_DOES_NOT_EXISTS
+                        "detail": HTTPMessages.USERNAME_DOES_NOT_EXISTS.format("X")
                     }
                 }
             }
         },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
+                }
+            }
+        }
     }
 )
-async def delete_user(
+def delete_user(
     user_id: uuid.UUID,
-    session: Annotated[AsyncSession, Depends(get_db)],
+    session: Annotated[Session, Depends(get_db)],
 ) -> None:
     """
     Delete the given User.
     """
     _service = UserService(session)
-    await _service.delete_user(user_id)
+    _service.delete_user(user_id)

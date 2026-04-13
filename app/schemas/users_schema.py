@@ -4,8 +4,8 @@ from typing import Annotated, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 _user_example = {
-    "id": "",
-    "username": "",
+    "id": "52f19e39-20ac-47fd-9df2-53d58c0b3f64",
+    "username": "UserName",
     "plain_password": "PlainPassword",
     "hashed_password": "HashedPassword",
     "email": "user@email.com",
@@ -24,13 +24,13 @@ class UserLogin(BaseModel):
     username: Annotated[str, Field(examples=[_user_example["username"]])]
     password: Annotated[str, Field(examples=[_user_example["plain_password"]])]
 
-class UserCreate(BaseModel):
+class UserCreate(UserLogin):
     """
     Pytdantic model for User creation
     """
 
-    username: Annotated[str, Field(examples=[_user_example["username"]])]
-    password: Annotated[str, Field(examples=[_user_example["plain_password"]])]
+    # username
+    # password
     email: Annotated[EmailStr, Field(examples=[_user_example["email"]])]
     is_active: Annotated[bool, Field(examples=[_user_example["is_active"]])]
     is_admin: Annotated[bool, Field(examples=[_user_example["is_admin"]])]

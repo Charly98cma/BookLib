@@ -1,7 +1,6 @@
 import uuid 
 from datetime import date, datetime
 from typing import Optional, List, TYPE_CHECKING
-from decimal import Decimal
 
 from sqlalchemy import (
     String,
@@ -78,7 +77,7 @@ class Book(Base):
     hc_book_id: Mapped[Optional[str]] = mapped_column(
         String(50), unique=True
     )
-    hc_rating: Mapped[Optional[Decimal]] = mapped_column(
+    hc_rating: Mapped[Optional[float]] = mapped_column(
         Numeric(3,2)
     )
     hc_n_ratings: Mapped[Optional[int]] = mapped_column(

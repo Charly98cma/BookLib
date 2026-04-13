@@ -2,11 +2,14 @@ import uuid
 from fastapi import APIRouter, Depends
 from typing import List, Annotated, Optional
 from http import HTTPStatus
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.database import get_db
-from enums.http_messages import HTTPMessages
+from sqlalchemy.orm import Session
+
+from core.db import get_db
+from core.http_messages import HTTPMessages
+
 from schemas.genres_schema import GenreCreate, GenreDBResponse
+
 from services.genres_service import GenreService
 
 # Genre router
@@ -24,30 +27,38 @@ router = APIRouter(
     response_model=GenreDBResponse,
     response_description="Genre created successfully",
     responses={
-        HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Invalid format",
+        HTTPStatus.CONFLICT: {
+            "description": "Genre name already in use",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.GENRE_NAME_ALREADY_EXISTS
+                        "detail": HTTPMessages.GENRE_NAME_ALREADY_EXISTS.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def create_genre(
+def create_genre(
     data: GenreCreate,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[GenreDBResponse]:
     """
     Create a new Genre entity on the database (and returns newly created
     entity), if:
 
-    * The *name* is unique (no other Genre already registered with it)
+    * The `name` is unique (no other Genre already registered with it)
     """
     _service = GenreService(session)
-    return await _service.create_genre(data)
+    return _service.create_genre(data)
 
 # READ #########################################################################
 
@@ -58,15 +69,15 @@ async def create_genre(
     response_model=List[GenreDBResponse],
     response_description="List with all genres in the database",
 )
-async def read_all_genres(
-    session: Annotated[AsyncSession, Depends(get_db)]
+def read_all_genres(
+    session: Annotated[Session, Depends(get_db)]
 ) -> List[GenreDBResponse]:
     """
     Return the list of Genre entities registered on the database, or an empty
     list if there are none.
     """
     _service = GenreService(session)
-    return await _service.read_all_genres()
+    return _service.read_all_genres()
 
 # UPDATE #######################################################################
 
@@ -77,12 +88,12 @@ async def read_all_genres(
     response_model=GenreDBResponse,
     response_description="Genre updated successfully",
     responses={
-        HTTPStatus.UNPROCESSABLE_ENTITY: {
+        HTTPStatus.CONFLICT: {
             "description": "Genre name already used",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.GENRE_NAME_ALREADY_EXISTS
+                        "detail": HTTPMessages.GENRE_NAME_ALREADY_EXISTS.format("X")
                     }
                 }
             }
@@ -92,25 +103,33 @@ async def read_all_genres(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.GENRE_DOES_NOT_EXIST
+                        "detail": HTTPMessages.GENRE_DOES_NOT_EXIST.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def update_genre(
+def update_genre(
     genre_id: uuid.UUID,
     data: GenreCreate,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[GenreDBResponse]:
     """
     Update the given Author entity with the new provided values, if:
 
-    * The *name* is unique (no other Genre already registered with it)
+    * The `name` is unique (no other Genre already registered with it)
     """    
     _service = GenreService(session)
-    return await _service.update_genre(genre_id, data)    
+    return _service.update_genre(genre_id, data)    
 
 # DELETE #######################################################################
 
@@ -124,19 +143,27 @@ async def update_genre(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.GENRE_DOES_NOT_EXIST
+                        "detail": HTTPMessages.GENRE_DOES_NOT_EXIST.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def delete_genre(
+def delete_genre(
     genre_id: uuid.UUID,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> None:
     """
     Delete the given Genre.
     """
     _service = GenreService(session)
-    await _service.delete_genre(genre_id)    
+    _service.delete_genre(genre_id)    

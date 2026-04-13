@@ -4,81 +4,39 @@ from sqlalchemy import insert
 from sqlalchemy.sql.expression import select, update, delete
 
 from models.publishers_model import Publisher
-from schemas.publishers_schema import PublisherCreate, PublisherDBResponse
 
-from repositories.base_repository import BaseRepository
+from repositories._base_repository import BaseRepository
 
 class PublisherRepository(BaseRepository):
 
     # CREATE ###################################################################
 
-    async def create_publisher(self, publisher: PublisherCreate) -> PublisherDBResponse:
-        stmt = (
-            insert(Publisher)
-            .values(**publisher.__dict__)
-            .returning(Publisher)
-        )
-        self.logger.debug("create_publisher() - stmt = ", stmt)
-        publisher_db = (await self.db.execute(stmt)).scalar_one()
-        await self.db.commit()
-        return PublisherDBResponse.model_validate(publisher_db)
+    def create_publisher(self, publisher: Publisher) -> Publisher:
+        self.db.add(publisher)
+        self.db.flush()
+        return publisher
 
     # READ #####################################################################
 
-    async def read_publisher(self, publisher_id: uuid.UUID) -> Optional[PublisherDBResponse]:
-        stmt = (
-            select(Publisher)
-            .where(Publisher.id == publisher_id)
-        )
-        self.logger.debug("read_publisher() - stmt = ", stmt)
-        publisher_db = (await self.db.execute(stmt)).scalar_one_or_none()
-        if (publisher_db is None):
-            return None
-        return PublisherDBResponse.model_validate(publisher_db)
+    def read_publisher(self, publisher_id: uuid.UUID) -> Optional[Publisher]:
+        return self.db.get(Publisher, publisher_id)
 
-    async def read_all_publishers(self) -> List[PublisherDBResponse]:
+    def read_all_publishers(self) -> Sequence[Publisher]:
         stmt = select(Publisher)
-        self.logger.debug("read_all_publishers() - stmt = ", stmt)
-        publisher_db_list = (await self.db.execute(stmt)).scalars().all()
-        return self._map_publishers_to_schema_list(publisher_db_list)
+        return self.db.scalars(stmt).all()
 
     # UPDATE ###################################################################
 
-    async def update_publisher(self, publisher_id: uuid.UUID, publisher: PublisherCreate) -> PublisherDBResponse:
-        stmt = (
-            update(Publisher)
-            .where(Publisher.id == publisher_id)
-            .values(**publisher.__dict__)
-            .returning(Publisher)
-        )
-        self.logger.debug("update_publisher() - stmt = ", stmt)
-        publisher_db = (await self.db.execute(stmt)).scalar_one()
-        await self.db.commit()
-        return PublisherDBResponse.model_validate(publisher_db)
+
 
     # DELETE ###################################################################
 
-    async def delete_publisher(self, publisher_id: uuid.UUID) -> None:
-        stmt = (
-            delete(Publisher)
-            .where(Publisher.id == publisher_id)
-        )
-        self.logger.debug("delete_publisher() - stmt = ", stmt)
-        await self.db.execute(stmt)
-        await self.db.commit()
+    def delete_publisher(self, publisher: Publisher) -> None:
+        self.db.delete(publisher)
 
     ############################################################################
 
-    async def is_publisher_unique(self, _publisher_name: str) -> bool:
-        stmt = (
-            select(Publisher)
-            .where(Publisher.name == _publisher_name)
-            .limit(1)
-        )
-        self.logger.debug("is_publisher_unique() - stmt = ", stmt)
-        result = (await self.db.execute(stmt)).scalar_one_or_none()
+    def is_publisher_unique(self, _publisher_name: str) -> bool:
+        stmt = select(Publisher).where(Publisher.name == _publisher_name)
+        result = self.db.scalar(stmt)
         return (result is None)
-
-    @staticmethod
-    def _map_publishers_to_schema_list(publisher_db_list: Sequence[Publisher]) -> List[PublisherDBResponse]:
-        return [PublisherDBResponse.model_validate(publisher) for publisher in publisher_db_list]

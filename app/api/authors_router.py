@@ -1,12 +1,15 @@
 import uuid
-from fastapi import APIRouter, Depends
 from typing import List, Annotated, Optional
 from http import HTTPStatus
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 
-from db.database import get_db
-from enums.http_messages import HTTPMessages
-from schemas.authors_schema import AuthorCreate, AuthorDBResponse
+from sqlalchemy.orm import Session
+
+from core.db import get_db
+from core.http_messages import HTTPMessages
+
+from schemas.authors_schema import AuthorCreate, AuthorUpdate, AuthorDBResponse
+
 from services.authors_service import AuthorService
 
 # Author router
@@ -24,30 +27,38 @@ router = APIRouter(
     response_model=AuthorDBResponse,
     response_description="Author created successfully",
     responses={
-        HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Invalid format",
+        HTTPStatus.CONFLICT: {
+            "description": "Author name already in use",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS
+                        "detail": HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
     }
 )
-async def create_author(
+def create_author(
     data: AuthorCreate,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[AuthorDBResponse]:
     """
     Create a new Author entity on the database (and returns newly created
     entity), if:
 
-    * The *name* is unique (no other Author entity already registered with it)
+    * The `name` is unique (no other Author entity already registered with it)
     """
     _service = AuthorService(session)
-    return await _service.create_author(data)
+    return _service.create_author(data)
 
 # READ #########################################################################
 
@@ -59,14 +70,14 @@ async def create_author(
     response_description="List with all authors in the database",
 )
 async def read_all_authors(
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> List[AuthorDBResponse]:
     """
     Return the list of Author entities registered on the database, or an empty
     list if there are none.
     """
     _service=AuthorService(session)
-    return await _service.read_all_authors()
+    return _service.read_all_authors()
 
 # UPDATE #######################################################################
 
@@ -77,12 +88,12 @@ async def read_all_authors(
     response_model=AuthorDBResponse,
     response_description="Author updated successfully",
     responses={
-        HTTPStatus.UNPROCESSABLE_ENTITY: {
-            "description": "Author name already used",
+        HTTPStatus.CONFLICT: {
+            "description": "Author name already in use",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS
+                        "detail": HTTPMessages.AUTHOR_NAME_ALREADY_EXISTS.format("X")
                     }
                 }
             }
@@ -92,8 +103,16 @@ async def read_all_authors(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.AUTHOR_DOES_NOT_EXIST
+                        "detail": HTTPMessages.AUTHOR_DOES_NOT_EXIST.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
@@ -101,16 +120,16 @@ async def read_all_authors(
 )
 async def update_author(
     author_id: uuid.UUID,
-    data: AuthorCreate,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    data: AuthorUpdate,
+    session: Annotated[Session, Depends(get_db)]
 ) -> Optional[AuthorDBResponse]:
     """
     Update the given Author entity with the new provided values, if:
 
-    * The *name* is unique (no other author already registered with it)
+    * The `name` is unique (no other author already registered with it)
     """
     _service=AuthorService(session)
-    return await _service.update_author(author_id, data)    
+    return _service.update_author(author_id, data)    
 
 # DELETE #######################################################################
 
@@ -124,8 +143,16 @@ async def update_author(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": HTTPMessages.AUTHOR_DOES_NOT_EXIST
+                        "detail": HTTPMessages.AUTHOR_DOES_NOT_EXIST.format("X")
                     }
+                }
+            }
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Invalid fields",
+            "content": {
+                "text/plain": {
+                    "example": HTTPMessages.VALIDATION_ERROR
                 }
             }
         }
@@ -133,10 +160,10 @@ async def update_author(
 )
 async def delete_author(
     author_id: uuid.UUID,
-    session: Annotated[AsyncSession, Depends(get_db)]
+    session: Annotated[Session, Depends(get_db)]
 ) -> None:
     """
     Delete the given Author.
     """
     _service=AuthorService(session)
-    await _service.delete_author(author_id)    
+    _service.delete_author(author_id)    

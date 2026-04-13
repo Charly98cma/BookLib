@@ -2,5 +2,7 @@ fastapi[standard]
 uvicorn[standard]
 sqlalchemy[asyncio]
 pydantic[email]
-asyncpg
+pydantic-settings
+psycopg
 bcrypt
+pyjwt

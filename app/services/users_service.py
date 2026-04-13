@@ -3,92 +3,110 @@ from logging import getLogger
 from typing import Optional, List
 from http import HTTPStatus
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+#from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from sqlalchemy.sql.functions import func
 from pydantic import EmailStr
 
-import tools.password_manager as passwd_mngr
-from enums.http_messages import HTTPMessages
+from core import oauth2
+from core.http_messages import HTTPMessages
+
 from schemas.users_schema import UserCreate, UserLogin, UserDBResponse
+
 from repositories.users_repository import UserRepository
 
-DUMMY_PASSWORD_HASH = passwd_mngr.hash_password("dummypassword")
+from models.users_model import User
+
+DUMMY_PASSWORD_HASH = oauth2.hash_password("dummypassword")
 
 class UserService:
     """Class to handle all services provided for the User endpoints"""
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: Session):
         self.repository = UserRepository(session)
         self.logger = getLogger(__name__)
 
     # CREATE ###################################################################
 
-    async def create_user(self, user: UserCreate) -> UserDBResponse:
-        # Verify uniqueness of username and email
-        await self._check_username_unique(user.username)
-        await self._check_email_unique(user.email)
-        # Verify password length
+    def create_user(self, user: UserCreate) -> UserDBResponse:
+        # Check values uniqueness
+        self._check_username_unique(user.username)
+        self._check_email_unique(user.email)
+        # Check password is not longer than 72 Bytes
         self._verify_password_length(user.password)
-        # If all OK, then hash user password and create the new user
-        password_hash = passwd_mngr.hash_password(user.password)
-        return await self.repository.create_user(user, password_hash)
+        # Hash password for database storage
+        password_hash = oauth2.hash_password(user.password)
+        # Create User ORM object
+        user_db = User(**(user.model_dump(exclude={"password"})))
+        user_db.password_hash = password_hash
+        # Add new User to database
+        self.repository.create_user(user_db)
+        return UserDBResponse.model_validate(user_db)
 
     # READ #####################################################################
 
-    async def read_all_users(self) -> List[UserDBResponse]:
-        return await self.repository.read_all_users()
-    
+    def read_all_users(self) -> List[UserDBResponse]:
+        user_db_list = self.repository.read_all_users()
+        return [UserDBResponse.model_validate(user) for user in user_db_list]
+
     # UPDATE ###################################################################
 
-    async def login(self, user: UserLogin) -> Optional[UserDBResponse]:
-        user_db = await self.repository.read_password(user.username)
-        # Check againts dummy password to avoid timming attacks
+    def login(self, user: UserLogin) -> Optional[UserDBResponse]:
+        user_db = self.repository.read_user_by_username(user.username)
+        # Check provided password
         if (user_db is None):
+            # Check againts dummy password to avoid timing attacks
             self._verify_password(user.password, DUMMY_PASSWORD_HASH)
         else:
             self._verify_password(user.password, user_db.password_hash)
-        # If user exists and passwords match, update login and return user
-        return await self.repository.update_last_login(user.username)
+            # If user exists and passwords match, update login and return user
+            user_db.last_login = func.now()
+            return UserDBResponse.model_validate(user_db)
 
-    async def update_user(self, user_id: uuid.UUID, user: UserCreate) -> Optional[UserDBResponse]:
-        user_db = await self._read_user(user_id)
-        if (user.username != user_db.username):
-            await self._check_username_unique(user_db.username)
-        if (user.email != user_db.email):
-            await self._check_email_unique(user_db.email)
+    def update_user(self, user_id: uuid.UUID, data: UserCreate) -> Optional[UserDBResponse]:
+        user_db = self._read_user(user_id)
+        # Check uniqueness of values (if they changed)
+        if (data.username != user_db.username):
+            self._check_username_unique(user_db.username)
+        if (data.email != user_db.email):
+            self._check_email_unique(user_db.email)
+        # Update values
+        for field, value in (data.__dict__).items():
+            setattr(user_db, field, value)
         # Update the user and return the new values of the database
-        return await self.repository.update_user(user_id, user)
+        return UserDBResponse.model_validate(user_db)
 
     # DELETE ###################################################################
 
-    async def delete_user(self, user_id: uuid.UUID) -> None:
-        await self._read_user(user_id)
-        await self.repository.delete_user(user_id)
+    def delete_user(self, user_id: uuid.UUID) -> None:
+        user_db = self._read_user(user_id)
+        self.repository.delete_user(user_db)
 
     # AUXILIAR FUNCTIONS #######################################################
 
-    async def _read_user(self, user_id: uuid.UUID) -> UserDBResponse:
-        user_db = await self.repository.read_user(user_id)
+    def _read_user(self, user_id: uuid.UUID) -> User:
+        user_db = self.repository.read_user(user_id)
         if (user_db is None):
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
-                detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS
+                detail=HTTPMessages.USERNAME_DOES_NOT_EXISTS.format(user_id)
             )
         return user_db
     
-    async def _check_username_unique(self, username: str) -> None:
-        username_unique = await self.repository.is_username_unique(username)
+    def _check_username_unique(self, username: str) -> None:
+        username_unique = self.repository.is_username_unique(username)
         if (not username_unique):
             raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.USERNAME_ALREADY_EXISTS
+                status_code=HTTPStatus.CONFLICT,
+                detail=HTTPMessages.USERNAME_ALREADY_EXISTS.format(username)
             )
 
-    async def _check_email_unique(self, email: EmailStr) -> None:
-        email_unique = await self.repository.is_email_unique(email)
+    def _check_email_unique(self, email: EmailStr) -> None:
+        email_unique = self.repository.is_email_unique(email)
         if (not email_unique):
             raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=HTTPMessages.EMAIL_ALREADY_EXISTS
+                status_code=HTTPStatus.CONFLICT,
+                detail=HTTPMessages.EMAIL_ALREADY_EXISTS.format(email)
             )
 
     @staticmethod
@@ -113,7 +131,7 @@ class UserService:
 
         Raises HTTPException 401 if passwords do not match.
         """
-        if (not passwd_mngr.verify_password(plain_password, hashed_password)):
+        if (not oauth2.verify_password(plain_password, hashed_password)):
             raise HTTPException(
                 status_code=HTTPStatus.UNAUTHORIZED,
                 detail=HTTPMessages.WRONG_CREDENTIALS

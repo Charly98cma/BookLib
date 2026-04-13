@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from core.config import settings
 from api import (
     authors_router,
     books_router,
@@ -9,11 +10,11 @@ from api import (
 )
 
 # Master router of the API
-router = APIRouter()
+router = APIRouter(
+    prefix=settings.API_V1_STR
+)
 
-################################################################################
-
-# Router of each model handled by the API
+# Router of each model handled by the API ######################################
 
 router.include_router(users_router.router)
 router.include_router(books_router.router)
