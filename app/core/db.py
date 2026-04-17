@@ -23,7 +23,7 @@ DATABASE_URL = (
 )
 
 # Create async connection/engine to the database
-engine = create_engine(DATABASE_URL, echo=settings.DEBUG)
+engine = create_engine(DATABASE_URL, echo=settings.DEBUG_SQL)
 
 # Session factory
 SessionFactory = sessionmaker(bind=engine)

@@ -3,6 +3,6 @@ uvicorn[standard]
 sqlalchemy[asyncio]
 pydantic[email]
 pydantic-settings
-psycopg
+psycopg[binary, pool]
 bcrypt
 pyjwt

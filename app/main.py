@@ -14,10 +14,9 @@ from api.router import router
 # Logging ######################################################################
 
 logging.basicConfig(
-    level=(logging.DEBUG if settings.DEBUG else logging.ERROR)
+    level=(logging.DEBUG if settings.DEBUG else logging.ERROR),
+    format=settings.LOGGING_FORMAT
 )
-
-logger = logging.getLogger(__name__)
 
 # FastAPI ######################################################################
 
@@ -29,8 +28,11 @@ async def lifespan(_: FastAPI):
 
 # Create API instance
 app = FastAPI(
-    title="BookLib",
-    debug=settings.DEBUG,
+    debug=settings.DEBUG_SQL,
+    title=settings.API_TITLE,
+    summary=settings.API_SUMMARY,
+    description=settings.API_DESCRIPTION,
+    version=settings.API_VERSION,
     lifespan=lifespan
 )
 
