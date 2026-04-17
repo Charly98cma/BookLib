@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from core.http_messages import HTTPMessages
 
-from schemas.authors_schema import AuthorCreate, AuthorUpdate, AuthorDBResponse
+from schemas.authors_schema import AuthorCreate, AuthorUpdate, AuthorDBBasic, AuthorDBFull
 
 from services.authors_service import AuthorService
 
@@ -24,7 +24,7 @@ router = APIRouter(
     "",
     summary="Create new author",
     status_code=HTTPStatus.OK,
-    response_model=AuthorDBResponse,
+    response_model=AuthorDBFull,
     response_description="Author created successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -50,7 +50,7 @@ router = APIRouter(
 def create_author(
     data: AuthorCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[AuthorDBResponse]:
+) -> Optional[AuthorDBFull]:
     """
     Create a new Author entity on the database (and returns newly created
     entity), if:
@@ -66,17 +66,17 @@ def create_author(
     "",
     summary="Get all authors",
     status_code=HTTPStatus.OK,
-    response_model=List[AuthorDBResponse],
+    response_model=List[AuthorDBBasic],
     response_description="List with all authors in the database",
 )
-async def read_all_authors(
+def read_all_authors(
     session: Annotated[Session, Depends(get_db)]
-) -> List[AuthorDBResponse]:
+) -> List[AuthorDBBasic]:
     """
     Return the list of Author entities registered on the database, or an empty
     list if there are none.
     """
-    _service=AuthorService(session)
+    _service = AuthorService(session)
     return _service.read_all_authors()
 
 # UPDATE #######################################################################
@@ -85,7 +85,7 @@ async def read_all_authors(
     "/{author_id}",
     summary="Update author",
     status_code=HTTPStatus.OK,
-    response_model=AuthorDBResponse,
+    response_model=AuthorDBFull,
     response_description="Author updated successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -99,7 +99,7 @@ async def read_all_authors(
             }
         },
         HTTPStatus.NOT_FOUND: {
-            "description": "Author not found",
+            "description": "Author/Book not found",
             "content": {
                 "application/json": {
                     "example": {
@@ -118,17 +118,17 @@ async def read_all_authors(
         }
     }
 )
-async def update_author(
+def update_author(
     author_id: uuid.UUID,
     data: AuthorUpdate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[AuthorDBResponse]:
+) -> Optional[AuthorDBFull]:
     """
     Update the given Author entity with the new provided values, if:
 
     * The `name` is unique (no other author already registered with it)
     """
-    _service=AuthorService(session)
+    _service = AuthorService(session)
     return _service.update_author(author_id, data)    
 
 # DELETE #######################################################################
@@ -158,12 +158,12 @@ async def update_author(
         }
     }
 )
-async def delete_author(
+def delete_author(
     author_id: uuid.UUID,
     session: Annotated[Session, Depends(get_db)]
 ) -> None:
     """
     Delete the given Author.
     """
-    _service=AuthorService(session)
+    _service = AuthorService(session)
     _service.delete_author(author_id)    

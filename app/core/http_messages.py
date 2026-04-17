@@ -31,5 +31,5 @@ class HTTPMessages:
     # Books endpoint
     BOOK_DOES_NOT_EXISTS: str = "Book with ID '{}' not found"
     BOOK_ISBN10_NOT_UNIQUE: str = "ISBN 10 '{}' already in use!"
-    BOOK_ISBN13_NOT_UNIQUE: str = "ISBN 13 '{}' already nn use!"
+    BOOK_ISBN13_NOT_UNIQUE: str = "ISBN 13 '{}' already in use!"
     BOOK_HC_ID_NOT_UNIQUE : str = "Hardcover ID '{}' already in use!"

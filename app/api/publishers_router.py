@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from core.http_messages import HTTPMessages
 
-from schemas.publishers_schema import PublisherCreate, PublisherDBResponse
+from schemas.publishers_schema import PublisherCreate, PublisherDBFull
 
 from services.publishers_service import PublisherService
 
@@ -24,7 +24,7 @@ router = APIRouter(
     "",
     summary="Create new publisher",
     status_code=HTTPStatus.OK,
-    response_model=PublisherDBResponse,
+    response_model=PublisherDBFull,
     response_description="Publisher created successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -50,7 +50,7 @@ router = APIRouter(
 def create_publisher(
     data: PublisherCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[PublisherDBResponse]:
+) -> Optional[PublisherDBFull]:
     """
     Create a new Author entity on the database (and returns newly created
     entity), if:
@@ -66,12 +66,12 @@ def create_publisher(
     "",
     summary="Get all publishers",
     status_code=HTTPStatus.OK,
-    response_model=List[PublisherDBResponse],
+    response_model=List[PublisherDBFull],
     response_description="List with all publishers in the database",
 )
 def read_all_publishers(
     session: Annotated[Session, Depends(get_db)]
-) -> List[PublisherDBResponse]:
+) -> List[PublisherDBFull]:
     """
     Return the list of Publisher entities registered on the database, or an
     empty list if there are none.
@@ -85,7 +85,7 @@ def read_all_publishers(
     "/{publisher_id}",
     summary="Update publisher",
     status_code=HTTPStatus.OK,
-    response_model=PublisherDBResponse,
+    response_model=PublisherDBFull,
     response_description="Publisher updated successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -122,7 +122,7 @@ def update_publisher(
     publisher_id: uuid.UUID,
     data: PublisherCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[PublisherDBResponse]:
+) -> Optional[PublisherDBFull]:
     """
     Update the given Publisher entity with the new provided values, if:
 

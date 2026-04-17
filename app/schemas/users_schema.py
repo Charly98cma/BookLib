@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Annotated, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
+################################################################################
+
 _user_example = {
     "id": "52f19e39-20ac-47fd-9df2-53d58c0b3f64",
     "username": "UserName",
@@ -13,8 +15,10 @@ _user_example = {
     "is_admin": False,
     "created_at": "2026-03-24T16:14:21.554Z",
     "updated_at": "2026-03-24T16:14:21.554Z",
-    "last_login": "2026-03-24T16:14:21.554Z",
+    "last_login": "2026-03-24T16:14:21.554Z"
 }
+
+################################################################################
 
 class UserLogin(BaseModel):
     """
@@ -34,6 +38,8 @@ class UserCreate(UserLogin):
     email: Annotated[EmailStr, Field(examples=[_user_example["email"]])]
     is_active: Annotated[bool, Field(examples=[_user_example["is_active"]])]
     is_admin: Annotated[bool, Field(examples=[_user_example["is_admin"]])]
+
+################################################################################
 
 class UserDBSecrets(BaseModel):
     """

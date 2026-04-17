@@ -12,7 +12,6 @@ class UserRepository(BaseRepository):
     # CREATE ###################################################################
 
     def create_user(self, user: User) -> User:
-        print(f">>>>>>>>>>>>>>>>>>>>>>>>> {user}")
         self.db.add(user)
         self.db.flush()
         return user

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from core.http_messages import HTTPMessages
 
-from schemas.books_schema import BookCreate, BookDBResponse
+from schemas.books_schema import BookCreate, BookDBBasic, BookDBFull
 
 from services.books_service import BooksService
 
@@ -24,7 +24,7 @@ router = APIRouter(
     "",
     summary="Create new book",
     status_code=HTTPStatus.OK,
-    response_model=BookDBResponse,
+    response_model=BookDBFull,
     response_description="Book created and returned successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -33,6 +33,16 @@ router = APIRouter(
                 "application/json": {
                     "example": {
                         "detail": HTTPMessages.BOOK_ISBN10_NOT_UNIQUE.format("X")
+                    }
+                }
+            }
+        },
+        HTTPStatus.CONFLICT: {
+            "description": "Author not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": HTTPMessages.AUTHOR_DOES_NOT_EXIST.format("X")
                     }
                 }
             }
@@ -50,7 +60,7 @@ router = APIRouter(
 def create_book(
     data: BookCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[BookDBResponse]:
+) -> Optional[BookDBFull]:
     """
     Creates a new book in the database, and returns the newly created entity, if:
 
@@ -67,7 +77,7 @@ def create_book(
     "/{book_id}",
     summary="Get book with the given ID",
     status_code=HTTPStatus.OK,
-    response_model=BookDBResponse,
+    response_model=BookDBFull,
     response_description="Book with the given ID",
     responses={
         HTTPStatus.NOT_FOUND: {
@@ -93,7 +103,7 @@ def create_book(
 def read_book(
     book_id: uuid.UUID,
     session: Annotated[Session, Depends(get_db)]
-) -> BookDBResponse:
+) -> BookDBFull:
     """
     """
     _service = BooksService(session)
@@ -103,18 +113,33 @@ def read_book(
     "",
     summary="Get all books",
     status_code=HTTPStatus.OK,
-    response_model=List[BookDBResponse],
+    response_model=List[BookDBBasic],
     response_description="List with all books on the database"
 )
 def read_all_books(
     session: Annotated[Session, Depends(get_db)]
-) -> List[BookDBResponse]:
+) -> List[BookDBBasic]:
     """
-    Yields a list with all the books in the database, or an empty list if there
-    are none.
     """
     _service = BooksService(session)
     return _service.read_all_books()
+
+@router.get(
+    "/author/{author_id}",
+    summary="Get all books of the given author",
+    status_code=HTTPStatus.OK,
+    response_model=List[BookDBBasic],
+    response_description="List with all book authored by the given author",
+)
+def read_author_books(
+    author_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_db)]
+) -> List[BookDBBasic]:
+    """
+    """
+    _service = BooksService(session)
+    return _service.read_books_by_author_id(author_id)
+
 
 # UPDATE #######################################################################
 
@@ -122,11 +147,11 @@ def read_all_books(
     "/{book_id}",
     summary="Update book",
     status_code=HTTPStatus.OK,
-    response_model=BookDBResponse,
+    response_model=BookDBFull,
     response_description="Book with updated values",
     responses={
         HTTPStatus.NOT_FOUND: {
-            "description": "Book not found",
+            "description": "Book / Author / Genre not found",
             "content": {
                 "application/json": {
                     "example": {
@@ -159,7 +184,7 @@ def update_book(
     book_id: uuid.UUID,
     data: BookCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[BookDBResponse]:
+) -> Optional[BookDBFull]:
     """
     Updates a book of the database, and returns the entity with its updated
     values if:

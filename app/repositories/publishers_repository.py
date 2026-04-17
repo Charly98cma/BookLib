@@ -1,7 +1,6 @@
 import uuid
-from typing import Optional, List, Sequence
-from sqlalchemy import insert
-from sqlalchemy.sql.expression import select, update, delete
+from typing import Optional, Sequence
+from sqlalchemy.sql.expression import select
 
 from models.publishers_model import Publisher
 

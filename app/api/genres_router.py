@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from core.http_messages import HTTPMessages
 
-from schemas.genres_schema import GenreCreate, GenreDBResponse
+from schemas.genres_schema import GenreCreate, GenreDBFull
 
 from services.genres_service import GenreService
 
@@ -24,7 +24,7 @@ router = APIRouter(
     "",
     summary="Create new genre",
     status_code=HTTPStatus.OK,
-    response_model=GenreDBResponse,
+    response_model=GenreDBFull,
     response_description="Genre created successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -50,7 +50,7 @@ router = APIRouter(
 def create_genre(
     data: GenreCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[GenreDBResponse]:
+) -> Optional[GenreDBFull]:
     """
     Create a new Genre entity on the database (and returns newly created
     entity), if:
@@ -66,12 +66,12 @@ def create_genre(
     "",
     summary="Get all genres",
     status_code=HTTPStatus.OK,
-    response_model=List[GenreDBResponse],
+    response_model=List[GenreDBFull],
     response_description="List with all genres in the database",
 )
 def read_all_genres(
     session: Annotated[Session, Depends(get_db)]
-) -> List[GenreDBResponse]:
+) -> List[GenreDBFull]:
     """
     Return the list of Genre entities registered on the database, or an empty
     list if there are none.
@@ -85,7 +85,7 @@ def read_all_genres(
     "/{genre_id}",
     summary="Update genre",
     status_code=HTTPStatus.OK,
-    response_model=GenreDBResponse,
+    response_model=GenreDBFull,
     response_description="Genre updated successfully",
     responses={
         HTTPStatus.CONFLICT: {
@@ -122,7 +122,7 @@ def update_genre(
     genre_id: uuid.UUID,
     data: GenreCreate,
     session: Annotated[Session, Depends(get_db)]
-) -> Optional[GenreDBResponse]:
+) -> Optional[GenreDBFull]:
     """
     Update the given Author entity with the new provided values, if:
 

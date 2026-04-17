@@ -1,5 +1,6 @@
 import uuid 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional, List, TYPE_CHECKING
 
 from sqlalchemy import (
@@ -40,16 +41,19 @@ class Book(Base):
         String(255), nullable=False
     )
     subtitle: Mapped[str] = mapped_column(
-        String(255), nullable=False
+        String(255), nullable=False, default=""
     )
-    description: Mapped[Optional[str]] = mapped_column(
-        Text
+    description: Mapped[str] = mapped_column(
+        Text, default=""
     )
     num_pages: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, nullable=False, default=0
     )
     is_physical: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
+    )
+    cover_path: Mapped[str] = mapped_column(
+        String(255)
     )
     
     # ISBNs
@@ -57,12 +61,12 @@ class Book(Base):
         String(10), unique=True
     )
     isbn_13: Mapped[Optional[str]] = mapped_column(
-        String(14), unique=True
+        String(13), unique=True
     )
 
     # Language (ISO 639-1)
     lang: Mapped[Optional[str]] = mapped_column(
-        String(2)
+        String(2), default=""
     )
 
     # Publishing info
@@ -70,18 +74,19 @@ class Book(Base):
         Date
     )
     publisher_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("publishers.id")
+        UUID(as_uuid=True),
+        ForeignKey("publishers.id", ondelete="SET NULL")
     )
 
     # Hardcover
     hc_book_id: Mapped[Optional[str]] = mapped_column(
-        String(50), unique=True
+        String(255), unique=True, default=""
     )
-    hc_rating: Mapped[Optional[float]] = mapped_column(
-        Numeric(3,2)
+    hc_rating: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(3,2), default=0.0
     )
     hc_n_ratings: Mapped[Optional[int]] = mapped_column(
-        Integer
+        Integer, default=0
     )
 
     # Audit

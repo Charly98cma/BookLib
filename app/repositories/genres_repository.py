@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, Sequence
+from typing import Optional, List
 from sqlalchemy.sql.expression import select
 
 from models.genres_model import Genre
@@ -19,10 +19,10 @@ class GenreRepository(BaseRepository):
 
     def read_genre(self, genre_id: uuid.UUID) -> Optional[Genre]:
         return self.db.get(Genre, genre_id)
-
-    def read_all_genres(self) -> Sequence[Genre]:
+    
+    def read_all_genres(self) -> List[Genre]:
         stmt = select(Genre)
-        return self.db.scalars(stmt).all()
+        return list(self.db.scalars(stmt).all())
 
     # UPDATE ###################################################################
 
